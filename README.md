@@ -12,6 +12,7 @@ No setup needed!
 2. Download the latest `.exe` file
 3. Run the app — no installation required!
 
+> ⚠️ **Important:** Make sure Northgard is set to **Windowed** or **Borderless** mode — not Fullscreen — or the overlay won’t display correctly.
 ---
 
 ## 🔍 Features
