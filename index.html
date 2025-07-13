@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Northgard Overlay</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    nav button {
+      padding: 6px 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .tab-content {
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+
+<div id="login-screen" class="login-box">
+  <button onclick="closeApp()" style="position: absolute; top: 10px; right: 10px; font-weight: bold;">X</button>
+  <div class="drag-zone">
+    <h3>Northgard Builds — Login / Register</h3>
+  </div>
+  <input type="email" id="email" placeholder="Email" />
+  <br><br>
+  <input type="password" id="password" placeholder="Password" />
+  <br><br>
+  <button id="loginBtn">Login</button>
+  <button id="registerBtn">Register</button>
+  <p id="authStatus"></p>
+</div>
+<div id="home-screen" style="display: none;">
+  
+  <div class="header-bar">
+    <button id="logoutBtn">Logout</button>
+    <button onclick="closeApp()" style="font-weight: bold;">X</button>
+  </div>
+
+
+  <nav>
+    <button onclick="showTab('build-tab')">Current Builds</button>
+    <button onclick="showTab('post-tab')">Post Build</button>
+    <button onclick="showTab('profile-tab')">Profile</button>
+  </nav>
+
+  <div id="build-tab" class="tab-content">
+    <div class="overlay">
+      <div class="drag-zone">
+        <h2>Northgard Build Order</h2>
+      </div>
+
+      <label for="clanFilter"><strong>Filter by Clan:</strong></label>
+      <select id="clanFilter">
+        <option value="All">All Clans</option>
+        <option value="Stag">Stag</option>
+        <option value="Goat">Goat</option>
+        <option value="Kraken">Kraken</option>
+        <option value="Wolf">Wolf</option>
+        <option value="Dragon">Dragon</option>
+        <option value="Squirrel">Squirrel</option>
+        <option value="Lion">Lion</option>
+        <option value="Boar">Boar</option>
+        <option value="Snake">Snake</option>
+        <option value="Rat">Rat</option>
+        <option value="Turtle">Turtle</option>
+        <option value="Hippogriff">Hippogriff</option>
+        <option value="Hound">Hound</option>
+        <option value="Lynx">Lynx</option>
+        <option value="Raven">Raven</option>
+        <option value="Bear">Bear</option>
+        <option value="Horse">Horse</option>
+        <option value="Ox">Ox</option>
+        <option value="Eagle">Eagle</option>
+        <option value="Owl">Owl</option>
+        <option value="Stoat">Stoat</option>
+      </select>
+
+      <br><br>
+      <select id="buildSelector"></select>
+      <ul id="buildList"></ul>
+      <div id="buildListContainer">
+        <ul id="buildList"></ul>
+      </div>
+    </div>
+  </div>
+     
+  <div id="post-tab" class="tab-content" style="display: none;">
+    <div class="overlay">
+      <div class="drag-zone">
+        <h2>Submit Your Build</h2>
+      </div>
+  <div class="situational-tags-container">
+    <button id="toggleSituationalTags" class="collapsible">+ Situational Tags</button>
+    <div id="situationalTagsContent" class="content" style="display: none;">
+    <label for="forestTag">Forest:</label>
+    <select id="forestTag">
+      <option value="Off">Off</option>
+      <option value="Forest">Present</option>
+      <option value="Mobs on Forest">Mobs Present</option>
+    </select>
+
+    <label for="shipwreckTag">Shipwreck:</label>
+    <select id="shipwreckTag">
+      <option value="Off">Off</option>
+      <option value="Shipwreck">Present</option>
+      <option value="Mobs on Shipwreck">Mobs Present</option>
+    </select>
+
+    <label for="ironTag">Iron:</label>
+    <select id="ironTag">
+      <option value="Off">Off</option>
+      <option value="Iron">Present</option>
+      <option value="Mobs on Iron">Mobs Present</option>
+    </select>
+
+    <label for="stoneTag">Stone:</label>
+    <select id="stoneTag">
+      <option value="Off">Off</option>
+      <option value="Stone">Present</option>
+      <option value="Mobs on Stone">Mobs Present</option>
+    </select>
+
+    <label for="ruinsTag">Ruins:</label>
+    <select id="ruinsTag">
+      <option value="Off">Off</option>
+      <option value="Ruins">Present</option>
+      <option value="Mobs on Ruins">Mobs Present</option>
+    </select>
+
+    <label for="loreTag">Lore Stone:</label>
+    <select id="loreTag">
+      <option value="Off">Off</option>
+      <option value="Lore Stone">Present</option>
+      <option value="Mobs on Lore Stone">Mobs Present</option>
+    </select>
+  </div>
+      <input id="newName" type="text" placeholder="Build Name" />
+      <br><br>
+
+      <select id="newClan">
+        <option value="" disabled selected>Select Clan</option>
+        <option value="Stag">Stag</option>
+        <option value="Goat">Goat</option>
+        <option value="Kraken">Kraken</option>
+        <option value="Wolf">Wolf</option>
+        <option value="Dragon">Dragon</option>
+        <option value="Squirrel">Squirrel</option>
+        <option value="Lion">Lion</option>
+        <option value="Boar">Boar</option>
+        <option value="Snake">Snake</option>
+        <option value="Rat">Rat</option>
+        <option value="Turtle">Turtle</option>
+        <option value="Hippogriff">Hippogriff</option>
+        <option value="Hound">Hound</option>
+        <option value="Lynx">Lynx</option>
+        <option value="Raven">Raven</option>
+        <option value="Bear">Bear</option>
+        <option value="Horse">Horse</option>
+        <option value="Ox">Ox</option>
+        <option value="Eagle">Eagle</option>
+        <option value="Owl">Owl</option>
+        <option value="Stoat">Stoat</option>
+      </select>
+
+      <br><br>
+      <textarea id="newSteps" rows="6" cols="35" placeholder="Each step on a new line..."></textarea>
+      <br><br>
+      <button id="submitBuild">Submit Build</button>
+      <p id="statusMsg"></p>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getFirestore, collection, getDocs, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDBHT5V9wrjqPvvuNsFr5q1sY0lgVmjVYk",
+    authDomain: "northgardbuilds.firebaseapp.com",
+    projectId: "northgardbuilds",
+    storageBucket: "northgardbuilds.appspot.com",
+    messagingSenderId: "1005760351082",
+    appId: "1:1005760351082:web:58ff96fc1ccc88935db313"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  window.db = db;
+  window.collection = collection;
+  window.getDocs = getDocs;
+  window.addDoc = addDoc;
+  window.auth = auth;
+  window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+  window.onAuthStateChanged = onAuthStateChanged;
+
+  import('./renderer.js');
+</script>
+</body>
+</html>

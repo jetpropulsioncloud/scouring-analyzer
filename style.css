@@ -1,0 +1,140 @@
+body {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: white;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+
+.overlay {
+  background-color: rgba(20, 20, 20, 0.85);
+  padding: 20px;
+  border-radius: 10px;
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+select,
+ul,
+button,
+textarea,
+input {
+  -webkit-app-region: no-drag;
+}
+
+select {
+  width: 100%;
+  padding: 5px;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 8px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+input[type="checkbox"] {
+  transform: scale(1.3);
+  cursor: pointer;
+}
+
+.login-box {
+  background-color: rgba(20, 20, 20, 0.85);
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  width: 90%;
+  max-width: 400px;
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+.login-box * {
+  -webkit-app-region: no-drag;
+}
+
+#buildList li {
+  margin-bottom: 10px;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+#buildList li:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+#buildList input[type="checkbox"] {
+  margin-right: 8px;
+  margin-top: 2px;
+}
+
+#buildList label {
+  white-space: normal;
+  word-wrap: break-word;
+  flex: 1;
+}
+
+#buildListContainer {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+  scroll-behavior: smooth;
+}
+
+label {
+  font-weight: bold;
+  margin-top: 10px;
+  display: block;
+}
+.situational-tags {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.situational-tags label {
+  margin-top: 8px;
+  font-weight: bold;
+  display: block;
+}
+
+.situational-tags select {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 4px;
+}
+.collapsible {
+  background-color: #444;
+  color: white;
+  padding: 8px 12px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+.collapsible:hover {
+  background-color: #555;
+}
+
+.situational-tags-container label {
+  margin-top: 8px;
+  font-weight: normal;
+}

@@ -1,0 +1,10 @@
+# Ignore build output
+out/
+*.exe
+*.nupkg
+
+# Ignore dependencies
+node_modules/
+
+# Ignore Electron dist files
+dist/
