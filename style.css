@@ -4,13 +4,15 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
+  padding-top: 50px;
+  padding-right: 10px;
 }
 
 .overlay {
   background-color: rgba(20, 20, 20, 0.85);
   padding: 20px;
   border-radius: 10px;
-  -webkit-app-region: drag;
+  -webkit-app-region: no-drag;
   cursor: move;
 }
 
@@ -20,6 +22,66 @@ button,
 textarea,
 input {
   -webkit-app-region: no-drag;
+}
+
+textarea {
+  width: 100%;
+  padding: 6px;
+  font-size: 14px;
+  border-radius: 4px;
+  resize: vertical;
+  overflow-y: auto;
+  line-height: 1.4;
+  box-sizing: border-box;
+  max-height: 200px;
+}
+.title-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 999;
+  background-color: rgba(30, 30, 30, 0.95);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+  font-size: 16px;
+  color: white;
+  -webkit-app-region: drag;
+  box-sizing: border-box;
+  height: 50px;
+}
+
+.title-bar * {
+  -webkit-app-region: no-drag;
+}
+
+.title-bar button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 4px 10px;
+  font-size: 14px;
+  margin-left: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.title-bar button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#profileBuildsContainer {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+#profileBuildsContainer * {
+  pointer-events: auto;
 }
 
 select {
@@ -40,11 +102,6 @@ li {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-input[type="checkbox"] {
-  transform: scale(1.3);
-  cursor: pointer;
 }
 
 .login-box {
@@ -76,17 +133,6 @@ input[type="checkbox"] {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-#buildList input[type="checkbox"] {
-  margin-right: 8px;
-  margin-top: 2px;
-}
-
-#buildList label {
-  white-space: normal;
-  word-wrap: break-word;
-  flex: 1;
-}
-
 #buildListContainer {
   max-height: 300px;
   overflow-y: auto;
@@ -99,6 +145,7 @@ label {
   margin-top: 10px;
   display: block;
 }
+
 .situational-tags {
   background-color: rgba(255, 255, 255, 0.05);
   padding: 10px;
@@ -117,6 +164,7 @@ label {
   margin-bottom: 8px;
   padding: 4px;
 }
+
 .collapsible {
   background-color: #444;
   color: white;
@@ -137,4 +185,46 @@ label {
 .situational-tags-container label {
   margin-top: 8px;
   font-weight: normal;
+}
+
+.steps-block {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 10px;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  -webkit-app-region: no-drag;
+}
+
+.steps-block * {
+  pointer-events: auto;
+  user-select: text;
+}
+
+.year-block {
+  margin-bottom: 20px;
+  background-color: rgba(255,255,255,0.03);
+  padding: 10px;
+  border-radius: 8px;
+  overflow: visible;
+}
+
+.phase-header {
+  margin-top: 14px;
+  font-weight: bold;
+  font-size: 15px;
+  color: #ddd;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 3px;
+}
+
+.build-step {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.build-card {
+  -webkit-app-region: no-drag;
 }

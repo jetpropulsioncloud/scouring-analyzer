@@ -15,6 +15,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 const loginSection = document.getElementById('login-screen');
 const homeScreen = document.getElementById('home-screen');
 const tabContents = document.querySelectorAll('.tab-content');
+const yearlyContainer = document.getElementById("yearly-builds");
 
 const { db, collection, getDocs, addDoc, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } = window;
 
@@ -38,6 +39,7 @@ onAuthStateChanged(auth, (user) => {
     homeScreen.style.display = 'block';
     showTab('build-tab');
     authStatus.textContent = `✅ Logged in as ${user.email}`;
+    loadUserBuilds(user.uid)
   } else {
     loginSection.style.display = 'block';
     homeScreen.style.display = 'none';
@@ -47,6 +49,28 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
+for (let year = 800; year <= 804; year++) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "year-block";
+  wrapper.innerHTML = `
+    <h4>Year ${year}</h4>
+    <textarea id="steps-${year}" rows="4" placeholder="Steps for ${year}..."></textarea>
+    <label>
+      <input type="checkbox" id="toggle-winter-${year}" />
+      Add Winter Steps for ${year}
+    </label>
+    <textarea id="steps-${year}-winter" style="display: none;" rows="3" placeholder="Winter ${year} steps..."></textarea>
+  `;
+  yearlyContainer.appendChild(wrapper);
+}
+
+for (let year = 800; year <= 804; year++) {
+  const toggle = document.getElementById(`toggle-winter-${year}`);
+  const winterBox = document.getElementById(`steps-${year}-winter`);
+  toggle.addEventListener("change", () => {
+    winterBox.style.display = toggle.checked ? "block" : "none";
+  });
+}
 logoutBtn.addEventListener('click', async () => {
   try {
     await auth.signOut();
@@ -58,21 +82,7 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 function showBuild(name, data = buildData) {
-  buildList.innerHTML = '';
-  data[name].steps.forEach((stepText, index) => {
-    const li = document.createElement('li');
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = `step-${index}`;
-
-    const label = document.createElement('label');
-    label.htmlFor = checkbox.id;
-    label.textContent = stepText;
-
-    li.appendChild(checkbox);
-    li.appendChild(label);
-    buildList.appendChild(li);
-  });
+  buildList.innerHTML = renderBuildSteps(data[name].steps);
 }
 
 function updateBuildSelector(filteredData) {
@@ -149,23 +159,34 @@ loginBtn.addEventListener('click', async () => {
 
 submitBtn.addEventListener('click', async () => {
   const buildName = newName.value.trim();
-  const steps = newSteps.value.trim().split('\n').map(s => s.trim()).filter(s => s);
   const selectedClan = newClan.value;
   const user = auth.currentUser;
-
+  let allSteps = [];
+  
+  for (let year = 800; year <= 804; year++) {
+    const mainSteps = document.getElementById(`steps-${year}`).value.trim().split("\n").filter(Boolean);
+    if (mainSteps.length > 0) {
+      allSteps.push(`# ${year}`);
+      allSteps.push(...mainSteps);
+    }
+    const winterSteps = document.getElementById(`steps-${year}-winter`).value.trim().split("\n").filter(Boolean);
+    if (winterSteps.length > 0) {
+      allSteps.push(`# ${year} Winter`);
+      allSteps.push(...winterSteps);
+    }
+  }
   if (!user) {
     statusMsg.textContent = "You must be logged in to submit a Build!";
     return;
   }
-  if (!buildName || steps.length === 0 || !selectedClan) {
+  if (!buildName || allSteps.length === 0 || !selectedClan) {
     statusMsg.textContent = "⚠️ Enter a build name, steps, and select a Clan";
     return;
   }
-
   try {
     await addDoc(collection(db, "builds"), {
       name: buildName,
-      steps: steps,
+      steps: allSteps,
       clan: selectedClan,
       situationalTags: situationalTags,
       userID: user.uid
@@ -177,6 +198,7 @@ submitBtn.addEventListener('click', async () => {
     newClan.selectedIndex = 0;
 
     await loadBuilds();
+    await loadUserBuilds(user.uid);
   } catch (err) {
     console.error("Error submitting build:", err);
     statusMsg.textContent = "❌ Error submitting build. Check console.";
@@ -206,5 +228,56 @@ if (toggleBtn && situationalContent) {
     toggleBtn.textContent = isVisible ? '+ Situational Tags' : '− Situational Tags';
   });
 }
+function getEmojiForStep(step) {
+  const lower = step.toLowerCase();
+  if (lower.includes("wood") || lower.includes("lodge")) return "🌲";
+  if (lower.includes("house")) return "🏠";
+  if (lower.includes("scout")) return "🧭";
+  if (lower.includes("colonize")) return "📍";
+  if (lower.includes("training") || lower.includes("military")) return "⚔️";
+  if (lower.includes("feast")) return "🍽️";
+  if (lower.includes("clear") || lower.includes("attack")) return "🛡️";
+  return "•";
+}
 
+function renderBuildSteps(steps) {
+  return steps.map(step => {
+    if (step.startsWith("#")) {
+      return `<h4 class="phase-header">📅 ${step.slice(1).trim()}</h4>`;
+    } else {
+      return `<div class="build-step">${getEmojiForStep(step)} ${step}</div>`;
+    }
+  }).join("");
+}
+async function loadUserBuilds(uid) {
+  const container = document.getElementById("profileBuildsContainer")
+  container.innerHTML = "<p>Loading your builds...</p>"
+  try {
+    const buildsRef = collection (db, "builds");
+    const q = window.query(buildsRef, window.where("userID", "==", uid));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+     container.innerHTML = "<p> No builds yet</p>";
+     return; 
+    }
+    container.innerHTML = "";
+
+    querySnapshot.forEach((doc) => {
+      const build = doc.data();
+      const card = document.createElement("div");
+      card.className = "build-card";
+      card.innerHTML = `
+        <h3>${build.name || "Untitled"} (${build.clan})</h3>
+        <div class="steps-block">
+          ${renderBuildSteps(build.steps || [])}
+        </div>
+      `;
+      container.appendChild(card);
+    });   
+  } catch (error) {
+    console.error("Error Loading Builds:", error);
+    container.innerHTML = "<p>Failed to load builds. Try again Later.</p>"
+  }
+}
 loadBuilds();

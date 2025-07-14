@@ -29,16 +29,38 @@
     .tab-content {
       padding: 10px;
     }
+
+    .title-bar {
+      -webkit-app-region: drag;
+      cursor: move;
+      font-weight: bold;
+      font-size: 16px;
+      background-color: rgba(255, 255, 255, 0.07);
+      padding: 10px;
+      border-radius: 8px 8px 0 0;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .title-bar * {
+      -webkit-app-region: no-drag;
+    }
   </style>
 </head>
 <body>
 
+<div class="title-bar">
+  <span>Northgard Overlay</span>
+  <div>
+    <button id="logoutBtn">Logout</button>
+    <button onclick="closeApp()">X</button>
+  </div>
+</div>
 
 <div id="login-screen" class="login-box">
-  <button onclick="closeApp()" style="position: absolute; top: 10px; right: 10px; font-weight: bold;">X</button>
-  <div class="drag-zone">
-    <h3>Northgard Builds — Login / Register</h3>
-  </div>
+  <h3>Northgard Builds — Login / Register</h3>
   <input type="email" id="email" placeholder="Email" />
   <br><br>
   <input type="password" id="password" placeholder="Password" />
@@ -47,14 +69,8 @@
   <button id="registerBtn">Register</button>
   <p id="authStatus"></p>
 </div>
+
 <div id="home-screen" style="display: none;">
-  
-  <div class="header-bar">
-    <button id="logoutBtn">Logout</button>
-    <button onclick="closeApp()" style="font-weight: bold;">X</button>
-  </div>
-
-
   <nav>
     <button onclick="showTab('build-tab')">Current Builds</button>
     <button onclick="showTab('post-tab')">Post Build</button>
@@ -63,9 +79,7 @@
 
   <div id="build-tab" class="tab-content">
     <div class="overlay">
-      <div class="drag-zone">
-        <h2>Northgard Build Order</h2>
-      </div>
+      <h2>Northgard Build Order</h2>
 
       <label for="clanFilter"><strong>Filter by Clan:</strong></label>
       <select id="clanFilter">
@@ -92,66 +106,74 @@
         <option value="Owl">Owl</option>
         <option value="Stoat">Stoat</option>
       </select>
-
       <br><br>
       <select id="buildSelector"></select>
-      <ul id="buildList"></ul>
       <div id="buildListContainer">
         <ul id="buildList"></ul>
       </div>
     </div>
   </div>
-     
+
+  <div id="profile-tab" class="tab-content" style="display: none;">
+    <div class="overlay">
+      <h2>Your Builds</h2>
+      <div id="profileBuildsContainer">
+        <p>Loading your builds...</p>
+      </div>
+    </div>
+  </div>   
+
   <div id="post-tab" class="tab-content" style="display: none;">
     <div class="overlay">
-      <div class="drag-zone">
-        <h2>Submit Your Build</h2>
+      <h2>Submit Your Build</h2>
+
+      <div class="situational-tags-container">
+        <button id="toggleSituationalTags" class="collapsible">+ Situational Tags</button>
+        <div id="situationalTagsContent" class="content" style="display: none;">
+          <label for="forestTag">Forest:</label>
+          <select id="forestTag">
+            <option value="Off">Off</option>
+            <option value="Forest">Present</option>
+            <option value="Mobs on Forest">Mobs Present</option>
+          </select>
+
+          <label for="shipwreckTag">Shipwreck:</label>
+          <select id="shipwreckTag">
+            <option value="Off">Off</option>
+            <option value="Shipwreck">Present</option>
+            <option value="Mobs on Shipwreck">Mobs Present</option>
+          </select>
+
+          <label for="ironTag">Iron:</label>
+          <select id="ironTag">
+            <option value="Off">Off</option>
+            <option value="Iron">Present</option>
+            <option value="Mobs on Iron">Mobs Present</option>
+          </select>
+
+          <label for="stoneTag">Stone:</label>
+          <select id="stoneTag">
+            <option value="Off">Off</option>
+            <option value="Stone">Present</option>
+            <option value="Mobs on Stone">Mobs Present</option>
+          </select>
+
+          <label for="ruinsTag">Ruins:</label>
+          <select id="ruinsTag">
+            <option value="Off">Off</option>
+            <option value="Ruins">Present</option>
+            <option value="Mobs on Ruins">Mobs Present</option>
+          </select>
+
+          <label for="loreTag">Lore Stone:</label>
+          <select id="loreTag">
+            <option value="Off">Off</option>
+            <option value="Lore Stone">Present</option>
+            <option value="Mobs on Lore Stone">Mobs Present</option>
+          </select>
+        </div>
       </div>
-  <div class="situational-tags-container">
-    <button id="toggleSituationalTags" class="collapsible">+ Situational Tags</button>
-    <div id="situationalTagsContent" class="content" style="display: none;">
-    <label for="forestTag">Forest:</label>
-    <select id="forestTag">
-      <option value="Off">Off</option>
-      <option value="Forest">Present</option>
-      <option value="Mobs on Forest">Mobs Present</option>
-    </select>
 
-    <label for="shipwreckTag">Shipwreck:</label>
-    <select id="shipwreckTag">
-      <option value="Off">Off</option>
-      <option value="Shipwreck">Present</option>
-      <option value="Mobs on Shipwreck">Mobs Present</option>
-    </select>
-
-    <label for="ironTag">Iron:</label>
-    <select id="ironTag">
-      <option value="Off">Off</option>
-      <option value="Iron">Present</option>
-      <option value="Mobs on Iron">Mobs Present</option>
-    </select>
-
-    <label for="stoneTag">Stone:</label>
-    <select id="stoneTag">
-      <option value="Off">Off</option>
-      <option value="Stone">Present</option>
-      <option value="Mobs on Stone">Mobs Present</option>
-    </select>
-
-    <label for="ruinsTag">Ruins:</label>
-    <select id="ruinsTag">
-      <option value="Off">Off</option>
-      <option value="Ruins">Present</option>
-      <option value="Mobs on Ruins">Mobs Present</option>
-    </select>
-
-    <label for="loreTag">Lore Stone:</label>
-    <select id="loreTag">
-      <option value="Off">Off</option>
-      <option value="Lore Stone">Present</option>
-      <option value="Mobs on Lore Stone">Mobs Present</option>
-    </select>
-  </div>
       <input id="newName" type="text" placeholder="Build Name" />
       <br><br>
 
@@ -180,17 +202,22 @@
         <option value="Stoat">Stoat</option>
       </select>
 
+      <h3>Steps Per Year (800–804)</h3>
+      <div id="yearly-builds"></div>
+
       <br><br>
       <textarea id="newSteps" rows="6" cols="35" placeholder="Each step on a new line..."></textarea>
       <br><br>
+
       <button id="submitBuild">Submit Build</button>
       <p id="statusMsg"></p>
     </div>
   </div>
 </div>
+
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-  import { getFirestore, collection, getDocs, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  import { getFirestore, collection, getDocs, addDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
   const firebaseConfig = {
@@ -214,8 +241,11 @@
   window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
   window.signInWithEmailAndPassword = signInWithEmailAndPassword;
   window.onAuthStateChanged = onAuthStateChanged;
+  window.query = query;
+  window.where = where;
 
   import('./renderer.js');
 </script>
+
 </body>
 </html>
