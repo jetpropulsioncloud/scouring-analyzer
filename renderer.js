@@ -16,7 +16,66 @@ const loginSection = document.getElementById('login-screen');
 const homeScreen = document.getElementById('home-screen');
 const tabContents = document.querySelectorAll('.tab-content');
 const yearlyContainer = document.getElementById("yearly-builds");
+const fs = require('fs');
+const path = require('path');
+const dataDir = path.join(__dirname, 'data');
+const pathSelector = document.getElementById('selectedPath');
+const lorePicker = document.getElementById('lorePicker');
+let buildSubmitCooldown = false;
+let loreOrderState = [];
 
+newClan.addEventListener('change', () => {
+  const clan = newClan.value;
+  if (!clan) return;
+
+  pathSelector.innerHTML = '';
+  lorePicker.innerHTML = '';
+  loreOrderState = [];
+
+  const paths = militaryPaths[clan]?.military_paths || [];
+  paths.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    pathSelector.appendChild(opt);
+  });
+
+  const availableLore = [
+    ...(clanLore[clan]?.has_common_lore || []),
+    ...(clanLore[clan]?.unique_lore || [])
+  ];
+
+  availableLore.forEach(lore => {
+    const btn = document.createElement('button');
+    btn.className = 'lore-button';
+    btn.textContent = lore;
+    btn.dataset.order = lore;
+    btn.dataset.lore = lore;
+    btn.addEventListener('click', () => {
+      const currentIndex = loreOrderState.findIndex(item => item.lore === lore);
+
+      if (currentIndex === -1) {
+        loreOrderState.push({ lore, order: loreOrderState.length + 1 });
+      } else {
+        loreOrderState.splice(currentIndex, 1);
+        loreOrderState = loreOrderState.map((item, index) => ({ ...item, order: index + 1 }));
+      }
+
+      document.querySelectorAll('.lore-button').forEach(button => {
+        const matched = loreOrderState.find(item => item.lore === button.dataset.lore);
+        button.dataset.order = matched ? matched.order : '';
+        button.textContent = matched ? `${matched.order}. ${button.dataset.lore}` : button.dataset.lore;
+      });
+    });
+    lorePicker.appendChild(btn);
+  });
+});
+const militaryPaths = JSON.parse(
+  fs.readFileSync(path.resolve(dataDir, 'militarypath.json'))
+);
+const clanLore = JSON.parse(
+  fs.readFileSync(path.resolve(dataDir, 'lore.json'))
+);
 const { db, collection, getDocs, addDoc, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } = window;
 
 let buildData = {};
@@ -30,9 +89,6 @@ function showTab(tabId) {
 }
 window.showTab = showTab;
 const tagIds = ['forestTag', 'shipwreckTag', 'ironTag', 'stoneTag', 'ruinsTag', 'loreTag'];
-const situationalTags = tagIds
-  .map(id => document.getElementById(id).value)
-  .filter(tag => tag !== "Off");
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginSection.style.display = 'none';
@@ -47,6 +103,13 @@ onAuthStateChanged(auth, (user) => {
     buildSelector.innerHTML = '';
     authStatus.textContent = '🔒 Please log in';
   }
+});
+
+const refreshBuildsBtn = document.getElementById('refreshBuildsBtn');
+refreshBuildsBtn.addEventListener('click', async () => {
+  await loadBuilds ();
+  const user = auth.currentUser;
+  if (user) await loadUserBuilds(user.uid);
 });
 
 for (let year = 800; year <= 804; year++) {
@@ -82,19 +145,56 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 function showBuild(name, data = buildData) {
-  buildList.innerHTML = renderBuildSteps(data[name].steps);
+  const build = data[name];
+  let html = '';
+  
+  html += `<details class="build-section"open>
+    <summary><strong>📋 Build Info</strong></summary>`;
+
+  if (build.militaryPath) {
+    html += `<h4>⚔️ Military Path</h4><p>${build.militaryPath}</p><hr>`;
+  }
+
+  if (build.loreOrder && build.loreOrder.length > 0) {
+    html += `<h4>📜 Lore Order</h4><ul class="lore-order-list">`;
+    build.loreOrder.forEach((lore, index) => {
+      html += `<li>${index + 1}. ${lore}</li>`;
+    });
+    html += `</ul>`;
+  }
+  if (build.situationalTags && build.situationalTags.length > 0) {
+    html += `<h4>🌍 Situational Tags</h4><div class="tag-pill-container">`;
+    build.situationalTags.forEach(tag => {
+      html += `<span class="tag-pill">${tag}</span>`;
+    });
+    html += `</div><hr>`;
+  }
+  html += `</details><hr>`;
+  html += renderBuildSteps(build.steps);
 }
 
 function updateBuildSelector(filteredData) {
   buildSelector.innerHTML = '';
+  buildList.innerHTML = '';
 
   for (const buildName in filteredData) {
+    const build = filteredData[buildName];
+    if (!build || !build.steps || !Array.isArray(build.steps)) continue;
     const option = document.createElement('option');
     option.value = buildName;
     option.textContent = buildName;
     buildSelector.appendChild(option);
+    const preview = document.createElement('div')
+    preview.className = 'build-preview';
+    const tagText = (build.situationalTags || []).join(', ') || 'None';
+    const previewHTML = `
+      <h4>${buildName} (${build.clan})</h4>
+      <p><strong>Tags:</strong> ${tagText}</p>
+      <button onclick="openBuildInWindow('${buildName}')">View</button>
+    `;
+    preview.innerHTML = previewHTML;
+    buildList.appendChild(preview);
   }
-
   if (buildSelector.options.length > 0) {
     buildSelector.selectedIndex = 0;
     showBuild(buildSelector.value, filteredData);
@@ -111,7 +211,10 @@ window.loadBuilds = async function () {
     const build = doc.data();
     buildData[build.name] = {
       steps: build.steps,
-      clan: build.clan
+      clan: build.clan,
+      loreOrder: build.loreOrder || [],
+      militaryPath: build.militaryPath || '',
+      situationalTags: build.situationalTags || []
     };
   });
 
@@ -149,7 +252,14 @@ registerBtn.addEventListener('click', async () => {
 loginBtn.addEventListener('click', async () => {
   const email = emailInput.value;
   const password = passwordInput.value;
+  const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
+
   try {
+    if (stayLoggedIn) {
+      window.auth.setPersistence(window.firebaseAuth.Persistence.LOCAL);
+    } else {
+      window.auth.setPersistence(window.firebaseAuth.Persistence.SESSION);
+    }
     await signInWithEmailAndPassword(auth, email, password);
     authStatus.textContent = "✅ Logged in!";
   } catch (error) {
@@ -161,6 +271,11 @@ submitBtn.addEventListener('click', async () => {
   const buildName = newName.value.trim();
   const selectedClan = newClan.value;
   const user = auth.currentUser;
+  const selectedPath = pathSelector.value;
+  const selectedLores = loreOrderState.map(item => item.lore);
+  const situationalTags = tagIds
+  .map(id => document.getElementById(id).value)
+  .filter(tag => tag !== "Off");
   let allSteps = [];
   
   for (let year = 800; year <= 804; year++) {
@@ -183,26 +298,48 @@ submitBtn.addEventListener('click', async () => {
     statusMsg.textContent = "⚠️ Enter a build name, steps, and select a Clan";
     return;
   }
+  if (buildSubmitCooldown) {
+    statusMsg.textContent = "⏳ Please wait before submitting again.";
+    return;
+  }
+  buildSubmitCooldown = true;
+  setTimeout(() => {
+    buildSubmitCooldown = false;
+  }, 5000);
   try {
     await addDoc(collection(db, "builds"), {
       name: buildName,
       steps: allSteps,
       clan: selectedClan,
       situationalTags: situationalTags,
-      userID: user.uid
+      userID: user.uid,
+      militaryPath: selectedPath,
+      loreOrder: selectedLores
     });
 
     statusMsg.textContent = "✅ Build submitted!";
-    newName.value = "";
-    newSteps.value = "";
-    newClan.selectedIndex = 0;
-
     await loadBuilds();
     await loadUserBuilds(user.uid);
   } catch (err) {
     console.error("Error submitting build:", err);
     statusMsg.textContent = "❌ Error submitting build. Check console.";
   }
+  newName.value = "";
+  newSteps.value = "";
+  newClan.selectedindex = 0;
+  lorePicker.innerHTML = '';
+  loreOrderState = [];
+  for (let year = 800; year <= 804; year++) {
+    document.getElementById(`steps-${year}`).value = '';
+    document.getElementById(`steps-${year}-winter`).value = '';
+    document.getElementById(`toggle-winter-${year}`).checked = false;
+    document.getElementById(`steps-${year}-winter`).style.display = 'none';
+  }
+  pathSelector.innerHTML = '';
+  tagIds.forEach(id => {
+    const dropdown = document.getElementById(id);
+    dropdown.selectedIndex = 0;
+  });
 });
 
 const { ipcRenderer } = require('electron');
@@ -250,6 +387,10 @@ function renderBuildSteps(steps) {
   }).join("");
 }
 async function loadUserBuilds(uid) {
+  setTimeout(() => {
+    const y800 = document.querySelector('.phase-header');
+    if (y800) y800.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
   const container = document.getElementById("profileBuildsContainer")
   container.innerHTML = "<p>Loading your builds...</p>"
   try {
@@ -272,12 +413,33 @@ async function loadUserBuilds(uid) {
         <div class="steps-block">
           ${renderBuildSteps(build.steps || [])}
         </div>
+        <button class="delete-btn" data-id="${doc.id}">Delete</button>
       `;
       container.appendChild(card);
     });   
+    container.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (confirm("Are you sure you want to delete this build?")) {
+          try{
+            await window.deleteDoc(window.doc(db, "builds", id));
+            await loadUserBuilds(uid);
+          } catch (err) {
+            console.error("Delete Error:", err);
+            alert("Error Deleting build. See Console.")
+          }
+        }
+      })
+    })
   } catch (error) {
     console.error("Error Loading Builds:", error);
     container.innerHTML = "<p>Failed to load builds. Try again Later.</p>"
   }
 }
+function openBuildInWindow(name) {
+  const build = buildData[name];
+  const buildWithName = { ...build, name }; // explicitly attach name
+  ipcRenderer.send('open-build-window', buildWithName);
+}
+window.openBuildInWindow = openBuildInWindow;
 loadBuilds();

@@ -1,0 +1,637 @@
+{
+  "Wolf": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Colonization",
+      "Eradication",
+      "Erudition",
+      "Fur Coats",
+      "Hearthstone",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shiny Happy People",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Coinage",
+      "Defensive Strategy",
+      "Feeling Safe",
+      "Monster Slayer"
+    ],
+    "unique_lore": [
+      "Field Rations",
+      "Invader",
+      "Spoils of War",
+      "Veiled Threats"
+    ]
+  },
+  "Stag": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Monster Slayer",
+      "Negotiation",
+      "Sharp Axes",
+      "Shiny Happy People",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Shiny Happy People"
+    ],
+    "missing_common_lore": [
+      "Hearthstone",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Recruitment",
+      "Weaponsmith"
+    ],
+    "unique_lore": [
+      "Food Preservation",
+      "Glory of the Clan",
+      "Hero Emblem",
+      "The Value of Great Deeds",
+      "Young and Proud"
+    ]
+  },
+  "Goat": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Defensive Strategy",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Monster Slayer",
+      "Negotiation",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan"
+    ],
+    "missing_common_lore": [
+      "Colonization",
+      "Eradication",
+      "Hearthstone",
+      "Mining Efficiency",
+      "Recruitment",
+      "Shiny Happy People",
+      "Weaponsmith"
+    ],
+    "unique_lore": [
+      "Amenities",
+      "Food Trade",
+      "Industrious",
+      "Spare Tools",
+      "Wool Trade"
+    ]
+  },
+  "Kraken": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Colonization",
+      "Defensive Strategy",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan"
+    ],
+    "missing_common_lore": [
+      "Coinage",
+      "Eradication",
+      "Hearthstone",
+      "Medicine",
+      "Military Strategy",
+      "Shiny Happy People",
+      "Weaponsmith"
+    ],
+    "unique_lore": [
+      "Endless Tide",
+      "Knowledge from Beyond",
+      "Near the Sea Spirit",
+      "Valhalla's Reinforcement"
+    ]
+  },
+  "Dragon": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Eradication",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Defensive Strategy",
+      "Erudition",
+      "Hearthstone",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Blood, Sweat & Tears",
+      "Capture",
+      "Draconic Frenzy",
+      "Draconic Rage",
+      "Thrall Trade"
+    ]
+  },
+  "Bear": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Medicine",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Harpoons",
+      "Hibernation",
+      "Protector of the Land",
+      "Shield Mastery",
+      "Winter Festival"
+    ]
+  },
+  "Boar": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Erudition",
+      "Hearthstone",
+      "Mining Efficiency",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Bartering",
+      "Herbalism",
+      "Lay of the Land",
+      "Legacy",
+      "Osmosis",
+      "Simple Living"
+    ]
+  },
+  "Horse": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Colonization",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Military Strategy",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Defensive Strategy",
+      "Eradication",
+      "Hearthstone",
+      "Medicine",
+      "Mining Efficiency",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Ancestral Influence",
+      "Excavation",
+      "Great Tower",
+      "Quality of Life",
+      "V\u00f6lund Fire"
+    ]
+  },
+  "Raven": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Eradication",
+      "Erudition",
+      "Hearthstone",
+      "Medicine",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Exotic Goods",
+      "Gear Upgrade",
+      "Journeymen",
+      "Negotiators",
+      "Rangers"
+    ]
+  },
+  "Snake": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Defensive Strategy",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Mining Efficiency",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Black Market",
+      "Guerilla Tactics",
+      "Rapacious Exploitation",
+      "Stolen Lore",
+      "Under Pressure"
+    ]
+  },
+  "Squirrel": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Military Strategy",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Medicine",
+      "Mining Efficiency",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Cooking Mastery",
+      "Economics",
+      "Kitchen Nightmare",
+      "Rumor-mongering",
+      "Stockpiling"
+    ]
+  },
+  "Lynx": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Coinage",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Medicine",
+      "Recruitment",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Archery Mastery",
+      "Nimble Paws",
+      "Poaching",
+      "Spoils of Plenty",
+      "The Wild Hunt"
+    ]
+  },
+  "Ox": {
+    "has_common_lore": [
+      "Colonization",
+      "Defensive Strategy",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Medicine",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "City Builder",
+      "Ferocious Charge",
+      "Military Training",
+      "Unstoppable",
+      "Warcraft"
+    ]
+  },
+  "Eagle": {
+    "has_common_lore": [
+      "Colonization",
+      "Defensive Strategy",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Eradication",
+      "Hearthstone",
+      "Military Strategy",
+      "Shiny Happy People",
+      "Weaponsmith"
+    ],
+    "unique_lore": [
+      "Blood Eagle",
+      "Foraging",
+      "Rapine",
+      "Sentinel",
+      "Training Field"
+    ]
+  },
+  "Rat": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Shiny Happy People"
+    ],
+    "unique_lore": [
+      "Blood Ties",
+      "Enrollment",
+      "Healing Fire",
+      "Overcrowding",
+      "Pain Suppressant"
+    ]
+  },
+  "Lion": {
+    "has_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Colonization",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan"
+    ],
+    "missing_common_lore": [
+      "Defensive Strategy",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Hearthstone",
+      "Shiny Happy People",
+      "Weaponsmith"
+    ],
+    "unique_lore": [
+      "Chanson de Geste",
+      "Emporia",
+      "Marchfield",
+      "Miraculous Healing",
+      "Ost",
+      "Steelwork",
+      "Via Regia"
+    ]
+  },
+  "Stoat": {
+    "has_common_lore": [
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Feeling Safe",
+      "Fur Coats",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shipbuilding",
+      "Trading Caravan"
+    ],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Erudition",
+      "Hearthstone",
+      "Shiny Happy People",
+      "Weaponsmith"
+    ],
+    "unique_lore": [
+      "Decima",
+      "Grinding Wheel",
+      "Inland Protection",
+      "Landlords",
+      "Marches of Brittany",
+      "Mutual Effort"
+    ]
+  },
+  "Owl": {
+    "has_common_lore": [],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Hearthstone",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shiny Happy People",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "unique_lore": []
+  },
+  "Hippogriff": {
+    "has_common_lore": [],
+    "missing_common_lore": [
+      "Carpentry Mastery",
+      "Coinage",
+      "Colonization",
+      "Defensive Strategy",
+      "Eradication",
+      "Erudition",
+      "Feeling Safe",
+      "Fur Coats",
+      "Hearthstone",
+      "Legendary Heroes",
+      "Medicine",
+      "Military Strategy",
+      "Mining Efficiency",
+      "Monster Slayer",
+      "Negotiation",
+      "Recruitment",
+      "Sharp Axes",
+      "Shiny Happy People",
+      "Shipbuilding",
+      "Trading Caravan",
+      "Weaponsmith"
+    ],
+    "unique_lore": []
+  }
+}

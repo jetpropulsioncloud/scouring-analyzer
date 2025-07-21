@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="icon" type="image/png" href="assets/longhouse-icon.png">
   <meta charset="UTF-8">
-  <title>Northgard Overlay</title>
+  <title>The Longhouse</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .header-bar {
@@ -52,7 +53,10 @@
 <body>
 
 <div class="title-bar">
-  <span>Northgard Overlay</span>
+  <span>    
+    <img src="assets/longhouse-icon.png" style="height: 20px; vertical-align: middle; margin-right: 8px;">
+    The Longhouse
+  </span>
   <div>
     <button id="logoutBtn">Logout</button>
     <button onclick="closeApp()">X</button>
@@ -65,17 +69,21 @@
   <br><br>
   <input type="password" id="password" placeholder="Password" />
   <br><br>
+  <br>
+  <label><input type= "checkbox" id="stayLoggedIn"> Stay Logged In</label>
+  <br><br>
   <button id="loginBtn">Login</button>
   <button id="registerBtn">Register</button>
   <p id="authStatus"></p>
 </div>
 
 <div id="home-screen" style="display: none;">
-  <nav>
-    <button onclick="showTab('build-tab')">Current Builds</button>
-    <button onclick="showTab('post-tab')">Post Build</button>
-    <button onclick="showTab('profile-tab')">Profile</button>
-  </nav>
+  <div class="content-wrapper">
+    <nav>
+      <button onclick="showTab('build-tab')">Current Builds</button>
+      <button onclick="showTab('post-tab')">Post Build</button>
+      <button onclick="showTab('profile-tab')">Profile</button>
+    </nav>
 
   <div id="build-tab" class="tab-content">
     <div class="overlay">
@@ -107,8 +115,9 @@
         <option value="Stoat">Stoat</option>
       </select>
       <br><br>
-      <select id="buildSelector"></select>
+        <select id="buildSelector"></select>
       <div id="buildListContainer">
+        <button id="refreshBuildsBtn">🔄 Refresh Builds</button>
         <ul id="buildList"></ul>
       </div>
     </div>
@@ -174,6 +183,7 @@
         </div>
       </div>
 
+      <label for="newName" class="input-label">Build Name:</label>
       <input id="newName" type="text" placeholder="Build Name" />
       <br><br>
 
@@ -202,13 +212,16 @@
         <option value="Stoat">Stoat</option>
       </select>
 
+      <label for="selectedPath">Military Path:</label>
+      <select id="selectedPath"></select>
+      
+      <label for="loreOrder">Lore Order:</label>
+      <div id="lorePicker" class="lore-grid"></div>
+
+
       <h3>Steps Per Year (800–804)</h3>
       <div id="yearly-builds"></div>
-
       <br><br>
-      <textarea id="newSteps" rows="6" cols="35" placeholder="Each step on a new line..."></textarea>
-      <br><br>
-
       <button id="submitBuild">Submit Build</button>
       <p id="statusMsg"></p>
     </div>
@@ -219,7 +232,16 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getFirestore, collection, getDocs, addDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-
+  import { deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  window.deleteDoc = deleteDoc;
+  window.doc = doc;
+  import { browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  window.firebaseAuth = {
+    Persistence: {
+      LOCAL: browserLocalPersistence,
+      SESSION: browserSessionPersistence
+    }
+  }
   const firebaseConfig = {
     apiKey: "AIzaSyDBHT5V9wrjqPvvuNsFr5q1sY0lgVmjVYk",
     authDomain: "northgardbuilds.firebaseapp.com",
@@ -246,6 +268,5 @@
 
   import('./renderer.js');
 </script>
-
 </body>
 </html>
