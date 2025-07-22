@@ -95,7 +95,8 @@ nav button:hover {
   color: white;
 }
 .login-box input[type="email"],
-.login-box input[type="password"] {
+.login-box input[type="password"],
+.login-box input[type="text"] {
   width: 100%;
   padding: 10px;
   background-color: #2a2a2a;

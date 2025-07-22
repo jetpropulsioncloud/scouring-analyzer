@@ -6,7 +6,7 @@ const newSteps = document.getElementById('newSteps');
 const statusMsg = document.getElementById('statusMsg');
 const newClan = document.getElementById('newClan');
 const clanFilter = document.getElementById('clanFilter');
-const emailInput = document.getElementById('email');
+const emailInput = document.getElementById('loginIdentifier');
 const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
@@ -92,6 +92,7 @@ const tagIds = ['forestTag', 'shipwreckTag', 'ironTag', 'stoneTag', 'ruinsTag', 
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginSection.style.display = 'none';
+    document.getElementById('register-screen').style.display = 'none';
     homeScreen.style.display = 'block';
     showTab('build-tab');
     authStatus.textContent = `✅ Logged in as ${user.email}`;
@@ -107,7 +108,7 @@ onAuthStateChanged(auth, (user) => {
 
 const refreshBuildsBtn = document.getElementById('refreshBuildsBtn');
 refreshBuildsBtn.addEventListener('click', async () => {
-  await loadBuilds ();
+  await loadBuilds (true);
   const user = auth.currentUser;
   if (user) await loadUserBuilds(user.uid);
 });
@@ -150,7 +151,9 @@ function showBuild(name, data = buildData) {
   
   html += `<details class="build-section"open>
     <summary><strong>📋 Build Info</strong></summary>`;
-
+  if (build.username) {
+    html += `<p><strong>👤 Submitted by:</strong> ${build.username}</p><hr>`;
+  }
   if (build.militaryPath) {
     html += `<h4>⚔️ Military Path</h4><p>${build.militaryPath}</p><hr>`;
   }
@@ -203,7 +206,16 @@ function updateBuildSelector(filteredData) {
   }
 }
 
-window.loadBuilds = async function () {
+window.loadBuilds = async function (forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = localStorage.getItem("cachedBuilds");
+    if (cached) {
+      buildData = JSON.parse(cached);
+      updateBuildSelector(buildData);
+      return;
+    }
+  }
+
   const querySnapshot = await getDocs(collection(db, "builds"));
   buildData = {};
 
@@ -214,12 +226,15 @@ window.loadBuilds = async function () {
       clan: build.clan,
       loreOrder: build.loreOrder || [],
       militaryPath: build.militaryPath || '',
-      situationalTags: build.situationalTags || []
+      situationalTags: build.situationalTags || [],
+      username: build.username || "Unknown"
     };
   });
 
+  localStorage.setItem("cachedBuilds", JSON.stringify(buildData));
   updateBuildSelector(buildData);
 };
+
 
 clanFilter.addEventListener('change', () => {
   const selectedClan = clanFilter.value;
@@ -238,40 +253,85 @@ buildSelector.addEventListener('change', () => {
   showBuild(buildSelector.value);
 });
 
-registerBtn.addEventListener('click', async () => {
-  const email = emailInput.value;
-  const password = passwordInput.value;
+registerBtn.addEventListener('click', () => {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('register-screen').style.display = 'block';
+});
+
+document.getElementById('backToLoginBtn').addEventListener('click', () => {
+  document.getElementById('register-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'block';
+});
+
+document.getElementById('finalizeRegisterBtn').addEventListener('click', async () => {
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+
+  if (!username || !email || !password) {
+    document.getElementById('registerStatus').textContent = "Fill in all fields.";
+    return;
+  }
+
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    authStatus.textContent = "✅ Registered successfully!";
-  } catch (error) {
-    authStatus.textContent = `❌ Error: ${error.message}`;
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    await addDoc(collection(db, "users"), {
+      uid: user.uid,
+      username: username,
+      email: email
+    });
+    document.getElementById('registerStatus').textContent = "✅ Registered!";
+  } catch (err) {
+    document.getElementById('registerStatus').textContent = `❌ ${err.message}`;
   }
 });
 
+
 loginBtn.addEventListener('click', async () => {
-  const email = emailInput.value;
+  const identifier = document.getElementById('loginIdentifier').value.trim();
   const password = passwordInput.value;
   const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
 
+  if (!identifier || !password) {
+    authStatus.textContent = "Please fill in all fields.";
+    return;
+  }
+
   try {
     if (stayLoggedIn) {
-      window.auth.setPersistence(window.firebaseAuth.Persistence.LOCAL);
+      await auth.setPersistence(firebaseAuth.Persistence.LOCAL);
     } else {
-      window.auth.setPersistence(window.firebaseAuth.Persistence.SESSION);
+      await auth.setPersistence(firebaseAuth.Persistence.SESSION);
     }
-    await signInWithEmailAndPassword(auth, email, password);
+
+    let emailToUse = identifier;
+
+    if (!identifier.includes('@')) {
+      const q = query(collection(db, "users"), where("username", "==", identifier));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        authStatus.textContent = "❌ Username not found.";
+        return;
+      }
+      emailToUse = snap.docs[0].data().email;
+    }
+
+    await signInWithEmailAndPassword(auth, emailToUse, password);
     authStatus.textContent = "✅ Logged in!";
   } catch (error) {
-    authStatus.textContent = `❌ Error: ${error.message}`;
+    authStatus.textContent = `❌ ${error.message}`;
   }
 });
+
 
 submitBtn.addEventListener('click', async () => {
   const buildName = newName.value.trim();
   const selectedClan = newClan.value;
   const user = auth.currentUser;
   const selectedPath = pathSelector.value;
+  const userSnapshot = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
+  const username = userSnapshot.empty ? user.email : userSnapshot.docs[0].data().username;
   const selectedLores = loreOrderState.map(item => item.lore);
   const situationalTags = tagIds
   .map(id => document.getElementById(id).value)
@@ -313,11 +373,13 @@ submitBtn.addEventListener('click', async () => {
       clan: selectedClan,
       situationalTags: situationalTags,
       userID: user.uid,
+      username: username || user.email,
       militaryPath: selectedPath,
       loreOrder: selectedLores
     });
 
     statusMsg.textContent = "✅ Build submitted!";
+    localStorage.removeItem("cachedBuilds");
     await loadBuilds();
     await loadUserBuilds(user.uid);
   } catch (err) {
@@ -325,7 +387,6 @@ submitBtn.addEventListener('click', async () => {
     statusMsg.textContent = "❌ Error submitting build. Check console.";
   }
   newName.value = "";
-  newSteps.value = "";
   newClan.selectedindex = 0;
   lorePicker.innerHTML = '';
   loreOrderState = [];
@@ -403,7 +464,7 @@ async function loadUserBuilds(uid) {
      return; 
     }
     container.innerHTML = "";
-
+    forceInputFocus("newName");
     querySnapshot.forEach((doc) => {
       const build = doc.data();
       const card = document.createElement("div");
@@ -424,6 +485,13 @@ async function loadUserBuilds(uid) {
           try{
             await window.deleteDoc(window.doc(db, "builds", id));
             await loadUserBuilds(uid);
+            await loadBuilds(true);
+            setTimeout(() => {
+              const nameInput = document.getElementById("newName");
+              if (nameInput && document.getElementById("post-tab").style.display !== "none") {
+                nameInput.focus(); // ✅ Bring typing back
+              }
+            }, 100);
           } catch (err) {
             console.error("Delete Error:", err);
             alert("Error Deleting build. See Console.")
@@ -442,4 +510,35 @@ function openBuildInWindow(name) {
   ipcRenderer.send('open-build-window', buildWithName);
 }
 window.openBuildInWindow = openBuildInWindow;
+
+const forgotPasswordBtn = document.getElementById('forgotPasswordBtn')
+forgotPasswordBtn.addEventListener('click', async () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    authStatus.textContent = "Enter your email first";
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    authStatus.textContent = "Reset email sent!"
+  } catch (error) {
+    authStatus.textContent =`Error: ${error.message}`;
+  }
+});
+function forceInputFocus(targetId) {
+  const trap = document.getElementById("focusTrap");
+  const target = document.getElementById(targetId);
+  if (!trap || !target) return;
+
+  setTimeout(() => {
+    trap.focus(); // force Electron to re-enable input capture
+    document.body.click();
+    setTimeout(() => {
+      target.blur();
+      trap.blur();
+      target.focus(); // jump focus to real input field
+    }, 30); // short delay helps with repaint timing
+  }, 50); // first delay allows DOM to settle after redraw
+}
+ipcRenderer.send("reset-window-focus");
 loadBuilds();

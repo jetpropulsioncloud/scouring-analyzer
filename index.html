@@ -65,7 +65,7 @@
 
 <div id="login-screen" class="login-box">
   <h3>Northgard Builds — Login / Register</h3>
-  <input type="email" id="email" placeholder="Email" />
+  <input type="text" id="loginIdentifier" placeholder="Email or Username" />
   <br><br>
   <input type="password" id="password" placeholder="Password" />
   <br><br>
@@ -74,8 +74,23 @@
   <br><br>
   <button id="loginBtn">Login</button>
   <button id="registerBtn">Register</button>
+  <button id="forgotPasswordBtn">Forgot Password?</button>
   <p id="authStatus"></p>
 </div>
+
+<div id="register-screen" class="login-box" style="display: none;">
+  <h3>Create an Account</h3>
+  <input type="text" id="reg-username" placeholder="Username" />
+  <br><br>
+  <input type="email" id="reg-email" placeholder="Email" />
+  <br><br>
+  <input type="password" id="reg-password" placeholder="Password" />
+  <br><br>
+  <button id="finalizeRegisterBtn">Register</button>
+  <button id="backToLoginBtn">Back to Login</button>
+  <p id="registerStatus"></p>
+</div>
+
 
 <div id="home-screen" style="display: none;">
   <div class="content-wrapper">
@@ -230,6 +245,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { getFirestore, collection, getDocs, addDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -268,5 +284,6 @@
 
   import('./renderer.js');
 </script>
+<input type="text" id="focusTrap" style="position:absolute; opacity:0; pointer-events:none;">
 </body>
 </html>

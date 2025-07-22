@@ -44,6 +44,13 @@ ipcMain.on('request-app-close', () => {
     mainWindow.close();
   }
 });
+ipcMain.on("reset-window-focus", () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    win.hide();
+    setTimeout(() => win.show(), 150);
+  }
+});
 
 ipcMain.on('open-build-window', (event, buildData) => {
   const buildWin = new BrowserWindow({
