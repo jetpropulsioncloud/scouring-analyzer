@@ -21,8 +21,13 @@ const path = require('path');
 const dataDir = path.join(__dirname, 'data');
 const pathSelector = document.getElementById('selectedPath');
 const lorePicker = document.getElementById('lorePicker');
+const { ipcRenderer } = require('electron');
 let buildSubmitCooldown = false;
 let loreOrderState = [];
+
+ipcRenderer.on('update-available', () => {
+  alert('🔄 A new update is available and will be installed after restart!');
+});
 
 newClan.addEventListener('change', () => {
   const clan = newClan.value;
@@ -403,7 +408,6 @@ submitBtn.addEventListener('click', async () => {
   });
 });
 
-const { ipcRenderer } = require('electron');
 
 function closeApp() {
   ipcRenderer.send('request-app-close');

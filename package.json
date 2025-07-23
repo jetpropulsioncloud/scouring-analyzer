@@ -1,11 +1,12 @@
 {
   "name": "northgardanalyzer",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
   },
   "keywords": [],
   "author": "Cloudpdf",
@@ -14,9 +15,11 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
     "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/publisher-github": "^7.8.1",
     "electron": "^37.2.0"
   },
   "dependencies": {
+    "electron-updater": "^6.6.2",
     "firebase": "^11.10.0"
   },
   "config": {
@@ -26,6 +29,19 @@
           "name": "@electron-forge/maker-squirrel",
           "config": {
             "name": "northgardanalyzer"
+          }
+        }
+      ],
+      "publishers": [
+        {
+          "name": "@electron-forge/publisher-github",
+          "config": {
+            "repository": {
+              "owner": "jetpropulsioncloud",
+              "name": "northgard-analyzer"
+            },
+            "prerelease": false,
+            "draft": true
           }
         }
       ]

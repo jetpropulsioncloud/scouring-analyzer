@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 
@@ -31,6 +32,18 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  autoUpdater.checkForUpdatesAndNotify();
+
+  autoUpdater.on('update-available', () => {
+    console.log('🔄 Update available');
+    mainWindow.webContents.send('update-available');
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    console.log('✅ Update downloaded. Will install on quit.');
+    autoUpdater.quitAndInstall();
+  });
 }
 
 app.whenReady().then(createWindow);
@@ -44,6 +57,7 @@ ipcMain.on('request-app-close', () => {
     mainWindow.close();
   }
 });
+
 ipcMain.on("reset-window-focus", () => {
   const win = BrowserWindow.getFocusedWindow();
   if (win) {
