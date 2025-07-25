@@ -408,3 +408,24 @@ body {
 .delete-btn:hover {
   background-color: #992222;
 }
+.upvote-btn {
+  background-color: #ffd96a;
+  border: none;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.upvote-btn:hover {
+  background-color: #ffca3a;
+  box-shadow: 0 0 6px #ffca3a66;
+}
+.build-card h4 {
+  margin-top: 0;
+}
+
+.build-card p {
+  margin: 4px 0;
+}

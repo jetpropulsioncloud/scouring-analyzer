@@ -1,50 +1,51 @@
 {
   "name": "northgardanalyzer",
-  "version": "1.0.4",
+  "version": "1.0.26",
+  "productName": "northgardanalyzer",
   "main": "main.js",
-  "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish"
-  },
-  "keywords": [],
   "author": "Cloudpdf",
   "license": "ISC",
   "description": "We'll figure it out later lol",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-builder",
+    "build": "electron-builder",
+    "publish": "electron-builder --publish always"
+  },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
-    "@electron-forge/maker-squirrel": "^7.8.1",
-    "@electron-forge/publisher-github": "^7.8.1",
-    "electron": "^37.2.0"
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
+    "electron-log": "^5.4.1",
     "electron-updater": "^6.6.2",
-    "firebase": "^11.10.0"
+    "firebase": "^11.10.0",
+    "yaml": "^2.8.0"
   },
-  "config": {
-    "forge": {
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "northgardanalyzer"
-          }
-        }
-      ],
-      "publishers": [
-        {
-          "name": "@electron-forge/publisher-github",
-          "config": {
-            "repository": {
-              "owner": "jetpropulsioncloud",
-              "name": "northgard-analyzer"
-            },
-            "prerelease": false,
-            "draft": true
-          }
-        }
-      ]
+  "build": {
+    "appId": "com.northgardanalyzer.app",
+    "productName": "northgardanalyzer",
+    "files": [
+      "**/*",
+      "!**/*.txt"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "jetpropulsioncloud",
+      "repo": "northgard-analyzer"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/longhouse-icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }

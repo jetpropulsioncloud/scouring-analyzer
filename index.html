@@ -64,7 +64,7 @@
 </div>
 
 <div id="login-screen" class="login-box">
-  <h3>Northgard Builds!!! — Login / Register</h3>
+  <h3>Northgard Builds — Login / Register</h3>
   <input type="text" id="loginIdentifier" placeholder="Email or Username" />
   <br><br>
   <input type="password" id="password" placeholder="Password" />
@@ -251,6 +251,8 @@
   import { deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   window.deleteDoc = deleteDoc;
   window.doc = doc;
+  import { updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  window.updateDoc = updateDoc;
   import { browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   window.firebaseAuth = {
     Persistence: {

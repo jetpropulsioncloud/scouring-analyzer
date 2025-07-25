@@ -1,16 +1,25 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+
+log.info("🟢 App launched");
+log.info(`🧠 App version: ${app.getVersion()}`);
+
 
 let mainWindow;
 
 function createWindow() {
-  console.log("🟢 Creating Electron window...");
-
+  log.info("🟢 Creating Electron window...");
+  log.info(`🧠 Current version: ${app.getVersion()}`);
   mainWindow = new BrowserWindow({
     width: 400,
     height: 600,
-    icon: path.join(__dirname, 'assets', 'longhouse-icon.png'),
+    icon: process.platform === 'win32'
+      ? path.join(__dirname, 'assets', 'longhouse-icon.ico')
+      : path.join(__dirname, 'assets', 'longhouse-icon.png'),
     transparent: false,
     frame: false,
     resizable: true,
@@ -23,7 +32,11 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
-  console.log("✅ index.html loaded.");
+  mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow.webContents.send('app-version', app.getVersion());
+  });
+  log.info("✅ index.html loaded.");
+  log.info("🔍 Checking for updates...");
 
   mainWindow.on('close', () => {
     mainWindow.webContents.send('logout-before-close');
@@ -33,17 +46,34 @@ function createWindow() {
     mainWindow = null;
   });
 
-  autoUpdater.checkForUpdatesAndNotify();
+  if (app.isPackaged) {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'jetpropulsioncloud',
+      repo: 'northgard-analyzer'
+    });
+
+    autoUpdater.checkForUpdatesAndNotify();
+  } else {
+    console.log("🔧 Skipping auto-update check (dev mode)");
+  }
+
 
   autoUpdater.on('update-available', () => {
-    console.log('🔄 Update available');
-    mainWindow.webContents.send('update-available');
+    log.info('🔄 Update available');
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('update-available');
+    }
   });
 
   autoUpdater.on('update-downloaded', () => {
-    console.log('✅ Update downloaded. Will install on quit.');
+    log.info('✅ Update downloaded. Will install on quit.');
     autoUpdater.quitAndInstall();
   });
+  autoUpdater.on('error', (err) => {
+    log.error('❌ AutoUpdater error:', err == null ? 'unknown' : (err.stack || err).toString());
+  });
+
 }
 
 app.whenReady().then(createWindow);

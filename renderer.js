@@ -113,9 +113,18 @@ onAuthStateChanged(auth, (user) => {
 
 const refreshBuildsBtn = document.getElementById('refreshBuildsBtn');
 refreshBuildsBtn.addEventListener('click', async () => {
-  await loadBuilds (true);
+  await loadBuilds (true, true);
   const user = auth.currentUser;
   if (user) await loadUserBuilds(user.uid);
+  const selectedClan = clanFilter.value;
+  if (selectedClan === "All") {
+    updateBuildSelector(buildData);
+  } else {
+    const filtered = Object.fromEntries(
+      Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan)
+    );
+    updateBuildSelector(filtered);
+  }
 });
 
 for (let year = 800; year <= 804; year++) {
@@ -195,9 +204,17 @@ function updateBuildSelector(filteredData) {
     const preview = document.createElement('div')
     preview.className = 'build-preview';
     const tagText = (build.situationalTags || []).join(', ') || 'None';
+    const isOwnBuild = auth.currentUser?.uid === build.userID;
+    const canUpvote = !isOwnBuild;
+    const upvoteCount = build.upvotes?.length || 0;
     const previewHTML = `
       <h4>${buildName} (${build.clan})</h4>
+      <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
       <p><strong>Tags:</strong> ${tagText}</p>
+      ${canUpvote 
+        ? `<button class="upvote-btn" onclick="upvoteBuild('${buildName}')">🔼 Upvote</button>` 
+        : `<em>Can't upvote own build</em>`}
+      <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
       <button onclick="openBuildInWindow('${buildName}')">View</button>
     `;
     preview.innerHTML = previewHTML;
@@ -211,12 +228,12 @@ function updateBuildSelector(filteredData) {
   }
 }
 
-window.loadBuilds = async function (forceRefresh = false) {
+window.loadBuilds = async function (forceRefresh = false, skipInitialDisplay = false) {
   if (!forceRefresh) {
     const cached = localStorage.getItem("cachedBuilds");
     if (cached) {
       buildData = JSON.parse(cached);
-      updateBuildSelector(buildData);
+      if (!skipInitialDisplay) updateBuildSelector(buildData);
       return;
     }
   }
@@ -232,12 +249,13 @@ window.loadBuilds = async function (forceRefresh = false) {
       loreOrder: build.loreOrder || [],
       militaryPath: build.militaryPath || '',
       situationalTags: build.situationalTags || [],
-      username: build.username || "Unknown"
+      username: build.username || "Unknown",
+      upvotes: build.upvotes || []
     };
   });
 
   localStorage.setItem("cachedBuilds", JSON.stringify(buildData));
-  updateBuildSelector(buildData);
+  if (!skipInitialDisplay) updateBuildSelector(buildData);
 };
 
 
@@ -380,7 +398,8 @@ submitBtn.addEventListener('click', async () => {
       userID: user.uid,
       username: username || user.email,
       militaryPath: selectedPath,
-      loreOrder: selectedLores
+      loreOrder: selectedLores,
+      upvotes: []
     });
 
     statusMsg.textContent = "✅ Build submitted!";
@@ -406,6 +425,35 @@ submitBtn.addEventListener('click', async () => {
     const dropdown = document.getElementById(id);
     dropdown.selectedIndex = 0;
   });
+  const allBuildsSnap = await getDocs(collection(db, "builds"));
+  const upvoted = [];
+
+  allBuildsSnap.forEach(doc => {
+    const build = doc.data();
+    if ((build.upvotes || []).includes(user.uid) && build.userID !== uid) {
+      upvoted.push({ ...build, docId: doc.id });
+    }
+  });
+
+  if (upvoted.length > 0) {
+    const upvotedHeader = document.createElement("h3");
+    upvotedHeader.textContent = "⭐ Builds You’ve Upvoted";
+    container.appendChild(upvotedHeader);
+
+    upvoted.forEach(build => {
+      const card = document.createElement("div");
+      card.className = "build-card";
+      const upvoteCount = build.upvotes?.length || 0;
+
+      card.innerHTML = `
+        <h4>${build.name || "Untitled"} (${build.clan})</h4>
+        <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
+        <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
+        <button onclick="openBuildInWindow('${build.name}')">View</button>
+      `;
+      container.appendChild(card);
+    });
+  }
 });
 
 
@@ -456,56 +504,90 @@ async function loadUserBuilds(uid) {
     const y800 = document.querySelector('.phase-header');
     if (y800) y800.scrollIntoView({ behavior: 'smooth' });
   }, 100);
-  const container = document.getElementById("profileBuildsContainer")
-  container.innerHTML = "<p>Loading your builds...</p>"
+
+  const container = document.getElementById("profileBuildsContainer");
+  container.innerHTML = "<p>Loading your builds...</p>";
+
   try {
-    const buildsRef = collection (db, "builds");
+    const user = auth.currentUser;
+    const buildsRef = collection(db, "builds");
     const q = window.query(buildsRef, window.where("userID", "==", uid));
     const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-     container.innerHTML = "<p> No builds yet</p>";
-     return; 
-    }
+
     container.innerHTML = "";
     forceInputFocus("newName");
-    querySnapshot.forEach((doc) => {
-      const build = doc.data();
-      const card = document.createElement("div");
-      card.className = "build-card";
-      card.innerHTML = `
-        <h3>${build.name || "Untitled"} (${build.clan})</h3>
-        <div class="steps-block">
-          ${renderBuildSteps(build.steps || [])}
-        </div>
-        <button class="delete-btn" data-id="${doc.id}">Delete</button>
-      `;
-      container.appendChild(card);
-    });   
-    container.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        if (confirm("Are you sure you want to delete this build?")) {
-          try{
-            await window.deleteDoc(window.doc(db, "builds", id));
-            await loadUserBuilds(uid);
-            await loadBuilds(true);
-            setTimeout(() => {
-              const nameInput = document.getElementById("newName");
-              if (nameInput && document.getElementById("post-tab").style.display !== "none") {
-                nameInput.focus(); // ✅ Bring typing back
-              }
-            }, 100);
-          } catch (err) {
-            console.error("Delete Error:", err);
-            alert("Error Deleting build. See Console.")
+
+    if (querySnapshot.empty) {
+      container.innerHTML = "<p>No builds yet</p>";
+    } else {
+      querySnapshot.forEach((doc) => {
+        const build = doc.data();
+        const card = document.createElement("div");
+        card.className = "build-card";
+        card.innerHTML = `
+          <h3>${build.name || "Untitled"} (${build.clan})</h3>
+          <p><strong>👤 Username:</strong> ${build.username || "Unknown"}</p>
+          <div class="steps-block">${renderBuildSteps(build.steps || [])}</div>
+          <button class="delete-btn" data-id="${doc.id}">Delete</button>
+        `;
+        container.appendChild(card);
+      });
+
+      container.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          if (confirm("Are you sure you want to delete this build?")) {
+            try {
+              await window.deleteDoc(window.doc(db, "builds", id));
+              await loadUserBuilds(uid);
+              await loadBuilds(true);
+              setTimeout(() => {
+                const nameInput = document.getElementById("newName");
+                if (nameInput && document.getElementById("post-tab").style.display !== "none") {
+                  nameInput.focus();
+                }
+              }, 100);
+            } catch (err) {
+              console.error("Delete Error:", err);
+              alert("Error Deleting build. See Console.");
+            }
           }
-        }
-      })
-    })
+        });
+      });
+    }
+    const allBuildsSnap = await getDocs(buildsRef);
+    const upvoted = [];
+
+    allBuildsSnap.forEach(doc => {
+      const build = doc.data();
+      if ((build.upvotes || []).includes(user.uid) && build.userID !== user.uid) {
+        upvoted.push({ ...build, docId: doc.id });
+      }
+    });
+
+    if (upvoted.length > 0) {
+      const upvotedHeader = document.createElement("h3");
+      upvotedHeader.textContent = "⭐ Builds You’ve Upvoted";
+      container.appendChild(upvotedHeader);
+
+      upvoted.forEach(build => {
+        const card = document.createElement("div");
+        card.className = "build-card";
+        const upvoteCount = build.upvotes?.length || 0;
+
+        card.innerHTML = `
+          <h4>${build.name || "Untitled"} (${build.clan})</h4>
+          <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
+          <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
+          <button onclick="openBuildInWindow('${build.name}')">View</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
   } catch (error) {
     console.error("Error Loading Builds:", error);
-    container.innerHTML = "<p>Failed to load builds. Try again Later.</p>"
+    container.innerHTML = "<p>Failed to load builds. Try again Later.</p>";
   }
 }
 function openBuildInWindow(name) {
@@ -529,6 +611,45 @@ forgotPasswordBtn.addEventListener('click', async () => {
     authStatus.textContent =`Error: ${error.message}`;
   }
 });
+
+ipcRenderer.on('app-version', (_, version) => {
+  document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;bottom:10px;right:10px;color:#999;">v${version}</div>`);
+});  
+
+async function upvoteBuild(name) {
+  const user = auth.currentUser;
+  if (!user) return alert("You must be logged in to upvote!");
+
+  const build = buildData[name];
+  const buildRef = query(collection(db, "builds"), where("name", "==", name));
+  const snapshot = await getDocs(buildRef);
+
+  if (snapshot.empty) return alert("Build not found.");
+
+  const docRef = snapshot.docs[0].ref;
+  const currentUpvotes = build.upvotes || [];
+
+  if (currentUpvotes.includes(user.uid)) {
+    alert("You already upvoted this build!");
+    return;
+  }
+
+  try {
+    const updatedVotes = [...currentUpvotes, user.uid];
+    await updateDoc(docRef, { upvotes: updatedVotes });
+    localStorage.removeItem("cachedBuilds");
+    await loadBuilds(true, true); // refresh builds silently
+    const selectedClan = clanFilter.value;
+    const filtered = selectedClan === "All"
+      ? buildData
+      : Object.fromEntries(Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan));
+    updateBuildSelector(filtered);
+  } catch (err) {
+    console.error("Upvote error:", err);
+    alert("Error upvoting. Try again.");
+  }
+}
+window.upvoteBuild = upvoteBuild;
 function forceInputFocus(targetId) {
   const trap = document.getElementById("focusTrap");
   const target = document.getElementById(targetId);
@@ -544,5 +665,5 @@ function forceInputFocus(targetId) {
     }, 30); // short delay helps with repaint timing
   }, 50); // first delay allows DOM to settle after redraw
 }
-ipcRenderer.send("reset-window-focus");
+
 loadBuilds();
