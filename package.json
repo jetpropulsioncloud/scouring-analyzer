@@ -1,6 +1,6 @@
 {
   "name": "northgardanalyzer",
-  "version": "1.0.26",
+  "version": "1.3.2",
   "productName": "northgardanalyzer",
   "main": "main.js",
   "author": "Cloudpdf",
@@ -44,8 +44,11 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "The Longhouse"
     }
   }
 }

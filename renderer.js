@@ -487,6 +487,17 @@ function getEmojiForStep(step) {
   if (lower.includes("training") || lower.includes("military")) return "⚔️";
   if (lower.includes("feast")) return "🍽️";
   if (lower.includes("clear") || lower.includes("attack")) return "🛡️";
+  if (lower.includes("trade post")) return "🏦";
+  if (lower.includes("warchief")) return "🪓";
+  if (lower.includes("brewery")) return "🍺";
+  if (lower.includes("mine") || lower.includes("mining")) return "⛏️";
+  if (lower.includes("fish")) return "🐟";
+  if (lower.includes("merchant")) return "🛍️";
+  if (lower.includes("fisherman")) return "🎣";
+  if (lower.includes("forge")) return "🛠️";
+  if (lower.includes("altar")) return "🕯️";
+  if (lower.includes("relic")) return "🗿";
+  if (lower.includes("ready")) return "✅";
   return "•";
 }
 
