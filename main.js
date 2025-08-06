@@ -65,7 +65,11 @@ function createWindow() {
       mainWindow.webContents.send('update-available');
     }
   });
-
+  autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('download-progress', progressObj);
+    }
+  });
   autoUpdater.on('update-downloaded', () => {
     log.info('✅ Update downloaded. Will install on quit.');
     autoUpdater.quitAndInstall();

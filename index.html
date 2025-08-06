@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="icon" type="image/png" href="assets/longhouse-icon.png">
+  <link rel="icon" type="image/x-icon" href="assets/longhouse-icon.ico">
   <meta charset="UTF-8">
   <title>The Longhouse</title>
   <link rel="stylesheet" href="style.css">
@@ -54,7 +54,7 @@
 
 <div class="title-bar">
   <span>    
-    <img src="assets/longhouse-icon.png" style="height: 20px; vertical-align: middle; margin-right: 8px;">
+    <img src="assets/longhouse-icon.ico" style="height: 20px; vertical-align: middle; margin-right: 8px;">
     The Longhouse
   </span>
   <div>
@@ -245,21 +245,28 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-  import { sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, collection, getDocs, addDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  window.deleteDoc = deleteDoc;
-  window.doc = doc;
-  import { updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  window.updateDoc = updateDoc;
-  import { browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  window.firebaseAuth = {
-    Persistence: {
-      LOCAL: browserLocalPersistence,
-      SESSION: browserSessionPersistence
-    }
-  }
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    onAuthStateChanged,
+    setPersistence,
+    browserLocalPersistence,
+    browserSessionPersistence
+  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    query,
+    where,
+    deleteDoc,
+    doc,
+    updateDoc
+  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
   const firebaseConfig = {
     apiKey: "AIzaSyDBHT5V9wrjqPvvuNsFr5q1sY0lgVmjVYk",
     authDomain: "northgardbuilds.firebaseapp.com",
@@ -274,18 +281,31 @@
   const auth = getAuth(app);
 
   window.db = db;
+  window.auth = auth;
   window.collection = collection;
   window.getDocs = getDocs;
   window.addDoc = addDoc;
-  window.auth = auth;
-  window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-  window.onAuthStateChanged = onAuthStateChanged;
   window.query = query;
   window.where = where;
+  window.deleteDoc = deleteDoc;
+  window.doc = doc;
+  window.updateDoc = updateDoc;
 
-  import('./renderer.js');
+  window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+  window.sendPasswordResetEmail = sendPasswordResetEmail;
+  window.onAuthStateChanged = onAuthStateChanged;
+  window.setPersistence = setPersistence;
+  window.browserLocalPersistence = browserLocalPersistence;
+  window.browserSessionPersistence = browserSessionPersistence;
+
+  console.log("✅ Firebase initialized and exposed globally.");
 </script>
+<script src="renderer.js"></script>
 <input type="text" id="focusTrap" style="position:absolute; opacity:0; pointer-events:none;">
+<div id="updateProgressContainer" style="display:none; position: fixed; bottom: 10px; left: 10px; right: 10px; background: #222; color: white; padding: 10px; border-radius: 8px;">
+  🔄 Downloading update... <progress id="updateProgressBar" value="0" max="100"></progress>
+  <span id="updateProgressText">0%</span>
+</div>
 </body>
 </html>
