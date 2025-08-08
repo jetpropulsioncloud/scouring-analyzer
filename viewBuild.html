@@ -82,60 +82,118 @@
       <div id="buildContent"></div>
     </div>
 
-  <script>
-    const { ipcRenderer } = require('electron');
+<script>
+  const { ipcRenderer } = require('electron');
 
-    function getEmojiForStep(step) {
-      const lower = step.toLowerCase();
-      if (lower.includes("wood") || lower.includes("lodge")) return "🌲";
-      if (lower.includes("house")) return "🏠";
-      if (lower.includes("scout")) return "🧭";
-      if (lower.includes("colonize")) return "📍";
-      if (lower.includes("training") || lower.includes("military")) return "⚔️";
-      if (lower.includes("feast")) return "🍽️";
-      if (lower.includes("clear") || lower.includes("attack")) return "🛡️";
-      if (lower.includes("trade post")) return "🏦";
-      if (lower.includes("warchief")) return "🪓";
-      if (lower.includes("brewery")) return "🍺";
-      if (lower.includes("mine") || lower.includes("mining")) return "⛏️";
-      if (lower.includes("fish")) return "🐟";
-      if (lower.includes("merchant")) return "🛍️";
-      if (lower.includes("fisherman")) return "🎣";
-      if (lower.includes("forge")) return "🛠️";
-      if (lower.includes("altar")) return "🕯️";
-      if (lower.includes("relic")) return "🗿";
-      if (lower.includes("ready")) return "✅";
-      return "•";
-    }
+  // Close the popup
+  function closeApp() {
+    window.close();
+  }
 
-    function renderBuildSteps(steps) {
-      return steps.map(step => {
-        if (step.startsWith("#")) {
-          return `<h4 class="phase-header">📅 ${step.slice(1).trim()}</h4>`;
-        } else {
-          return `<div class="build-step">${getEmojiForStep(step)} ${step}</div>`;
-        }
-      }).join("");
-    }
+  // Pick emoji for a step
+  function getEmojiForStep(step) {
+    const s = step.toLowerCase();
+    if (s.includes("wood") || s.includes("lodge")) return "🌲";
+    if (s.includes("house")) return "🏠";
+    if (s.includes("scout")) return "🧭";
+    if (s.includes("colonize")) return "📍";
+    if (s.includes("training") || s.includes("military")) return "⚔️";
+    if (s.includes("feast")) return "🍽️";
+    if (s.includes("clear") || s.includes("attack")) return "🛡️";
+    if (s.includes("trade post")) return "🏦";
+    if (s.includes("warchief")) return "🪓";
+    if (s.includes("brewery")) return "🍺";
+    if (s.includes("mine") || s.includes("mining")) return "⛏️";
+    if (s.includes("fish")) return "🐟";
+    if (s.includes("merchant")) return "🛍️";
+    if (s.includes("fisherman")) return "🎣";
+    if (s.includes("forge")) return "🛠️";
+    if (s.includes("altar")) return "🕯️";
+    if (s.includes("relic")) return "🗿";
+    if (s.includes("ready")) return "✅";
+    return "•";
+  }
 
-    ipcRenderer.on('load-build', (event, build) => {
-      const loreHTML = (build.loreOrder || []).map((lore, i) => `<li>${i + 1}. ${lore}</li>`).join('');
-      const tags = (build.situationalTags || []).join(', ') || 'None';
+  // Show steps in the build
+  function renderBuildSteps(steps) {
+    return (steps || []).map(step => {
+      if (step.startsWith("#")) {
+        return `<h4 class="phase-header">📅 ${step.slice(1).trim()}</h4>`;
+      }
+      return `<div class="build-step">${getEmojiForStep(step)} ${step}</div>`;
+    }).join("");
+  }
 
-      const html = `
-        <h2>${build.name} (${build.clan})</h2>
-        ${build.militaryPath ? `<p><strong>⚔️ Military Path:</strong> ${build.militaryPath}</p>` : ''}
-        ${loreHTML ? `<div><strong>📜 Lore Order:</strong><ul>${loreHTML}</ul></div>` : ''}
-        <p><strong>🌍 Tags:</strong> ${tags}</p>
-        <hr>
-        <div>${renderBuildSteps(build.steps || [])}</div>
-      `;
-      document.getElementById('buildContent').innerHTML = html;
+  // Listen for the build data from main
+  ipcRenderer.on('load-build', (event, build) => {
+    const tags = (build.situationalTags || []).join(', ') || 'None';
+    const html = `
+      <h2>${build.name} (${build.clan})</h2>
+      ${build.militaryPath ? `<p><strong>⚔️ Military Path:</strong> ${build.militaryPath}</p>` : ''}
+      <button id="toggleLoreBtn">📜 Show Lore</button>
+      <div id="loreViewer" style="display:none; margin-top: 16px;"></div>
+      <p><strong>🌍 Tags:</strong> ${tags}</p>
+      <hr>
+      <div>${renderBuildSteps(build.steps)}</div>
+    `;
+    document.getElementById('buildContent').innerHTML = html;
+
+    const toggleLoreBtn = document.getElementById("toggleLoreBtn");
+    const loreViewer = document.getElementById("loreViewer");
+
+    toggleLoreBtn.addEventListener("click", () => {
+      if (loreViewer.style.display === "none") {
+        showLore(build);
+        loreViewer.style.display = "block";
+        toggleLoreBtn.textContent = "📜 Hide Lore";
+      } else {
+        loreViewer.style.display = "none";
+        toggleLoreBtn.textContent = "📜 Show Lore";
+      }
     });
+  });
 
-    function closeApp() {
-      window.close();
+  // Show the lore tree in read-only mode
+  function showLore(build) {
+    const container = document.getElementById("loreViewer");
+    container.innerHTML = "";
+
+    const order = build.loreOrder || [];
+    if (order.length === 0) {
+      container.innerHTML = "<p><em>No lore order available.</em></p>";
+      return;
     }
-  </script>
+
+    const looksNumeric = (v) => Number.isFinite(v) || /^\d+$/.test(String(v));
+    const isTree = (build.loreMode === 'tree') || order.every(looksNumeric);
+
+    if (isTree) {
+      const iframe = document.createElement("iframe");
+      iframe.src = "lore-tree.html";
+      iframe.style.cssText = "width:100%;height:400px;border:none;border-radius:8px;";
+      iframe.onload = () => {
+        try {
+          const idx = order.map(n => parseInt(n, 10));
+          iframe.contentWindow.setSelectedLoreIndexes(idx);
+        } catch (err) {
+          console.error("Failed to set lore:", err);
+        }
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const style = doc.createElement('style');
+        style.textContent = `
+          button, [role="button"], a, input, select, textarea, .clickable {
+            pointer-events: none !important;
+          }
+        `;
+        doc.head.appendChild(style);
+      };
+      container.appendChild(iframe);
+      iframe.style.pointerEvents = "none";
+    } else {
+      const items = order.map((l, i) => `<li>${i + 1}. ${l}</li>`).join('');
+      container.innerHTML = `<div><strong>📜 Lore Order:</strong><ul>${items}</ul></div>`;
+    }
+  }
+</script>
 </body>
 </html>

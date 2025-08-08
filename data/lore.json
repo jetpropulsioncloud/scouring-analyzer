@@ -583,55 +583,31 @@
   "Owl": {
     "has_common_lore": [],
     "missing_common_lore": [
-      "Carpentry Mastery",
-      "Coinage",
-      "Colonization",
-      "Defensive Strategy",
-      "Eradication",
-      "Erudition",
-      "Feeling Safe",
-      "Fur Coats",
-      "Hearthstone",
-      "Legendary Heroes",
-      "Medicine",
-      "Military Strategy",
-      "Mining Efficiency",
-      "Monster Slayer",
-      "Negotiation",
-      "Recruitment",
-      "Sharp Axes",
-      "Shiny Happy People",
-      "Shipbuilding",
-      "Trading Caravan",
-      "Weaponsmith"
     ],
     "unique_lore": []
   },
-  "Hippogriff": {
-    "has_common_lore": [],
-    "missing_common_lore": [
-      "Carpentry Mastery",
-      "Coinage",
-      "Colonization",
-      "Defensive Strategy",
-      "Eradication",
-      "Erudition",
-      "Feeling Safe",
-      "Fur Coats",
-      "Hearthstone",
-      "Legendary Heroes",
-      "Medicine",
-      "Military Strategy",
-      "Mining Efficiency",
-      "Monster Slayer",
-      "Negotiation",
-      "Recruitment",
-      "Sharp Axes",
-      "Shiny Happy People",
-      "Shipbuilding",
-      "Trading Caravan",
-      "Weaponsmith"
+"Hippogriff": {
+    "has_common_lore": [
     ],
-    "unique_lore": []
+    "missing_common_lore": [
+    ],
+    "unique_lore": [
+    ]
+  },
+"Hound": {
+    "has_common_lore": [
+    ],
+    "missing_common_lore": [
+    ],
+    "unique_lore": [
+    ]
+  },
+"Turtle": {
+    "has_common_lore": [
+    ],
+    "missing_common_lore": [
+    ],
+    "unique_lore": [
+    ]
   }
 }

@@ -28,6 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const pathSelector = document.getElementById('selectedPath');
   const lorePicker = document.getElementById('lorePicker');
   const { ipcRenderer } = require('electron');
+  const loreJsonMode = document.getElementById('loreJsonMode');
+  const loreTreeMode = document.getElementById('loreTreeMode');
+  const loreTreeFrame = document.getElementById('loreTreeFrame');
   let buildSubmitCooldown = false;
   let loreOrderState = [];
 
@@ -60,7 +63,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (container) container.style.display = 'none';
   });
 
+  loreJsonMode.addEventListener('change', () => {
+    if (loreJsonMode.checked) {
+      lorePicker.style.display = 'block';
+      loreTreeFrame.style.display = 'none';
+    }
+  });
 
+  loreTreeMode.addEventListener('change', () => {
+    if (loreTreeMode.checked) {
+      lorePicker.style.display = 'none';
+      loreTreeFrame.style.display = 'block';
+    }
+  });
   newClan.addEventListener('change', () => {
     const clan = newClan.value;
     if (!clan) return;
@@ -288,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
         steps: build.steps,
         clan: build.clan,
         loreOrder: build.loreOrder || [],
+        loreMode: build.loreMode || 'json',
         militaryPath: build.militaryPath || '',
         situationalTags: build.situationalTags || [],
         username: build.username || "Unknown",
@@ -391,15 +407,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const buildName = newName.value.trim();
     const selectedClan = newClan.value;
     const user = auth.currentUser;
+    const uid = user.uid;
     const selectedPath = pathSelector.value;
     const userSnapshot = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const username = userSnapshot.empty ? user.email : userSnapshot.docs[0].data().username;
-    const selectedLores = loreOrderState.map(item => item.lore);
+    let selectedLores = loreOrderState.map(item => item.lore);
     const situationalTags = tagIds
     .map(id => document.getElementById(id).value)
     .filter(tag => tag !== "Off");
     let allSteps = [];
-    
+    if (loreJsonMode.checked) {
+      selectedLores = loreOrderState.map(item => item.lore);
+    } else if (loreTreeMode.checked) {
+      const treeWindow = loreTreeFrame.contentWindow;
+      if (treeWindow && typeof treeWindow.getSelectedLores === "function") {
+      selectedLores = treeWindow.getSelectedLoreIndexes();
+      } else {
+        statusMsg.textContent = "❌ Could not get lore from lore tree.";
+        return;
+      }
+    }
+    if (selectedLores.length === 0) {
+      statusMsg.textContent = "⚠️ Please select at least one Lore.";
+      return;
+    }
     for (let year = 800; year <= 804; year++) {
       const mainSteps = document.getElementById(`steps-${year}`).value.trim().split("\n").filter(Boolean);
       if (mainSteps.length > 0) {
@@ -438,6 +469,7 @@ document.addEventListener("DOMContentLoaded", () => {
         username: username || user.email,
         militaryPath: selectedPath,
         loreOrder: selectedLores,
+        loreMode: loreMode,
         upvotes: []
       });
 
@@ -558,7 +590,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   async function loadUserBuilds(uid) {
     const container = document.getElementById("profileBuildsContainer");
-
     container.innerHTML = "<p>Loading your builds...</p>";
 
     try {
@@ -591,6 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
               try {
                 await window.deleteDoc(window.doc(db, "builds", id));
                 await loadUserBuilds(uid);
+                const uid = user.uid;
                 localStorage.removeItem("cachedBuilds");
                 await loadBuilds(true, true);
               } catch (err) {
