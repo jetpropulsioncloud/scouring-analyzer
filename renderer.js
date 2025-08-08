@@ -1,5 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-
+  const stayLoggedIn = localStorage.getItem("stayLoggedIn") === "true";
+  const persistenceMode = stayLoggedIn ? window.browserLocalPersistence : window.browserSessionPersistence;
+  window.setPersistence(window.auth, persistenceMode).then(() => {
+    console.log("✅ Persistence set:", stayLoggedIn ? "Local" : "Session");
+  });
   const buildSelector = document.getElementById('buildSelector');
   const buildList = document.getElementById('buildList');
   const submitBtn = document.getElementById('submitBuild');
@@ -186,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   logoutBtn.addEventListener('click', async () => {
     try {
+      localStorage.removeItem("stayLoggedIn");  // 🧼 optional
       await auth.signOut();
       authStatus.textContent = "Logged out successfully";
     } catch (err) {
@@ -193,6 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
       authStatus.textContent = "Error Logging out";
     }
   });
+
 
   function showBuild(name, data = buildData) {
     const build = data[name];
@@ -349,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const identifier = document.getElementById('loginIdentifier').value.trim();
     const password = document.getElementById('password').value;
     const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
-
+    localStorage.setItem("stayLoggedIn", stayLoggedIn);
     if (!identifier || !password) {
       authStatus.textContent = "Please fill in all fields.";
       return;
@@ -495,19 +501,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.closeApp = closeApp;
 
-  ipcRenderer.on('logout-before-close', () => {
-    const stayLoggedIn = document.getElementById('stayLoggedIn')?.checked;
-    
-    if (!stayLoggedIn) {
-      auth.signOut().then(() => {
-        console.log("🔒 Logged out before app closed.");
-        window.close();
-      });
-    } else {
-      console.log("✅ Staying logged in after close.");
-      window.close();
-    }
-  });
+///  ipcRenderer.on('logout-before-close', () => {
+//    const stayLoggedIn = localStorage.getItem("stayLoggedIn") === "true";
+
+ //   if (!stayLoggedIn) {
+  //    auth.signOut().then(() => {
+   //     console.log("🔒 Logged out before app closed.");
+    //    window.close();
+    //  });
+    //} else {
+     // console.log("✅ Staying logged in after close.");
+      //window.close();
+   // }
+  //});
   const toggleBtn = document.getElementById('toggleSituationalTags');
   const situationalContent = document.getElementById('situationalTagsContent');
 

@@ -10,6 +10,7 @@ log.info(`🧠 App version: ${app.getVersion()}`);
 
 
 let mainWindow;
+let buildWin = null;
 
 function createWindow() {
   log.info("🟢 Creating Electron window...");
@@ -39,7 +40,9 @@ function createWindow() {
   log.info("🔍 Checking for updates...");
 
   mainWindow.on('close', () => {
-    mainWindow.webContents.send('logout-before-close');
+    if (buildWin && !buildWin.isDestroyed()) {
+      buildWin.close();
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -101,7 +104,7 @@ ipcMain.on("reset-window-focus", () => {
 });
 
 ipcMain.on('open-build-window', (event, buildData) => {
-  const buildWin = new BrowserWindow({
+  buildWin = new BrowserWindow({
     width: 400,
     height: 600,
     minWidth: 350,
