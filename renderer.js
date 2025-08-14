@@ -1,14 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const stayLoggedIn = localStorage.getItem("stayLoggedIn") === "true";
-  const persistenceMode = stayLoggedIn ? window.browserLocalPersistence : window.browserSessionPersistence;
-  window.setPersistence(window.auth, persistenceMode).then(() => {
-    console.log("✅ Persistence set:", stayLoggedIn ? "Local" : "Session");
-  });
+  const fs = require('fs');
+  const path = require('path');
+  const { ipcRenderer } = require('electron');
+
+  const dataDir = path.join(__dirname, 'assets', 'maps');
+  let mapsData = [];
+  const mapsPath = path.resolve(dataDir, 'maps.json');
+  try {
+    const raw = fs.readFileSync(mapsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    mapsData = Array.isArray(parsed) ? parsed : Array.isArray(parsed.maps) ? parsed.maps : [];
+    console.log('✅ Loaded maps from:', mapsPath, 'count =', mapsData.length);
+  } catch (e) {
+    console.warn('⚠️ Could not load maps JSON at:', mapsPath, e?.message || e);
+    mapsData = [];
+  }
+
+  const mapByName = Object.fromEntries(mapsData.map(m => [m.name, m.image || m.img || '']));
+
+  const phases = [
+    { id: "early", label: "Early Game (0–4 min)" },
+    { id: "mid", label: "Mid Game (4–10 min)" },
+    { id: "late", label: "Late Game (10+ min)" }
+  ];
+
+  const closeBtn = document.getElementById('closeBtn');
   const buildSelector = document.getElementById('buildSelector');
   const buildList = document.getElementById('buildList');
   const submitBtn = document.getElementById('submitBuild');
   const newName = document.getElementById('newName');
-  const newSteps = document.getElementById('newSteps');
   const statusMsg = document.getElementById('statusMsg');
   const newClan = document.getElementById('newClan');
   const clanFilter = document.getElementById('clanFilter');
@@ -22,26 +42,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const homeScreen = document.getElementById('home-screen');
   const tabContents = document.querySelectorAll('.tab-content');
   const yearlyContainer = document.getElementById("yearly-builds");
-  const fs = require('fs');
-  const path = require('path');
-  const dataDir = path.join(__dirname, 'data');
-  const pathSelector = document.getElementById('selectedPath');
-  const lorePicker = document.getElementById('lorePicker');
-  const { ipcRenderer } = require('electron');
-  const loreJsonMode = document.getElementById('loreJsonMode');
-  const loreTreeMode = document.getElementById('loreTreeMode');
-  const loreTreeFrame = document.getElementById('loreTreeFrame');
-  let buildSubmitCooldown = false;
-  let loreOrderState = [];
+  const refreshBuildsBtn = document.getElementById('refreshBuildsBtn');
+  const profileBuildsContainer = document.getElementById('profileBuildsContainer');
 
+  const upgradesInput = document.getElementById('upgrades');
+  const mapSelectors = ['mapTag1', 'mapTag2'];
+  const toggleBtn = document.getElementById('toggleSituationalTags');
+  const tagsContent = document.getElementById('situationalTagsContent');
+  if (toggleBtn && tagsContent) {
+    toggleBtn.addEventListener('click', () => {
+      tagsContent.style.display = tagsContent.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+
+  const buildTabBtn = document.getElementById('tab-build');
+  const postTabBtn = document.getElementById('tab-post');
+  const profileTabBtn = document.getElementById('tab-profile');
+
+  const { db, collection, getDocs, addDoc, auth, createUserWithEmailAndPassword, onAuthStateChanged } = window;
+
+  const stayLoggedIn = localStorage.getItem("stayLoggedIn") === "true";
+  if (typeof window.setPersistence === 'function' && window.auth) {
+    const persistenceMode = stayLoggedIn ? window.browserLocalPersistence : window.browserSessionPersistence;
+    window.setPersistence(window.auth, persistenceMode)
+      .then(() => console.log("✅ Persistence set:", stayLoggedIn ? "Local" : "Session"))
+      .catch(err => console.warn("setPersistence warn:", err?.message || err));
+  } else {
+    console.warn("ℹ️ Firebase not ready yet; skipping setPersistence.");
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', () => ipcRenderer.send('request-app-close'));
 
   ipcRenderer.on('update-available', () => {
     const container = document.getElementById('updateProgressContainer');
     const progressBar = document.getElementById('updateProgressBar');
     const progressText = document.getElementById('updateProgressText');
-
     if (!container || !progressBar || !progressText) return;
-
     container.style.display = 'block';
     progressBar.value = 0;
     progressText.textContent = `0%`;
@@ -50,9 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById('updateProgressContainer');
     const progressBar = document.getElementById('updateProgressBar');
     const progressText = document.getElementById('updateProgressText');
-
     if (!container || !progressBar || !progressText) return;
-
     container.style.display = 'block';
     const percent = Math.round(progressObj.percent);
     progressBar.value = percent;
@@ -63,84 +97,61 @@ document.addEventListener("DOMContentLoaded", () => {
     if (container) container.style.display = 'none';
   });
 
-  loreJsonMode.addEventListener('change', () => {
-    if (loreJsonMode.checked) {
-      lorePicker.style.display = 'block';
-      loreTreeFrame.style.display = 'none';
-    }
-  });
-
-  loreTreeMode.addEventListener('change', () => {
-    if (loreTreeMode.checked) {
-      lorePicker.style.display = 'none';
-      loreTreeFrame.style.display = 'block';
-    }
-  });
-  newClan.addEventListener('change', () => {
-    const clan = newClan.value;
-    if (!clan) return;
-
-    pathSelector.innerHTML = '';
-    lorePicker.innerHTML = '';
-    loreOrderState = [];
-
-    const paths = militaryPaths[clan]?.military_paths || [];
-    paths.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p;
-      opt.textContent = p;
-      pathSelector.appendChild(opt);
-    });
-
-    const availableLore = [
-      ...(clanLore[clan]?.has_common_lore || []),
-      ...(clanLore[clan]?.unique_lore || [])
-    ];
-
-    availableLore.forEach(lore => {
-      const btn = document.createElement('button');
-      btn.className = 'lore-button';
-      btn.textContent = lore;
-      btn.dataset.order = lore;
-      btn.dataset.lore = lore;
-      btn.addEventListener('click', () => {
-        const currentIndex = loreOrderState.findIndex(item => item.lore === lore);
-
-        if (currentIndex === -1) {
-          loreOrderState.push({ lore, order: loreOrderState.length + 1 });
-        } else {
-          loreOrderState.splice(currentIndex, 1);
-          loreOrderState = loreOrderState.map((item, index) => ({ ...item, order: index + 1 }));
-        }
-
-        document.querySelectorAll('.lore-button').forEach(button => {
-          const matched = loreOrderState.find(item => item.lore === button.dataset.lore);
-          button.dataset.order = matched ? matched.order : '';
-          button.textContent = matched ? `${matched.order}. ${button.dataset.lore}` : button.dataset.lore;
-        });
-      });
-      lorePicker.appendChild(btn);
-    });
-  });
-  const { db, collection, getDocs, addDoc, auth, createUserWithEmailAndPassword, onAuthStateChanged } = window;
-  const militaryPaths = JSON.parse(
-    fs.readFileSync(path.resolve(dataDir, 'militarypath.json'))
-  );
-  const clanLore = JSON.parse(
-    fs.readFileSync(path.resolve(dataDir, 'lore.json'))
-  );
-
-  let buildData = {};
-
   function showTab(tabId) {
-    tabContents.forEach(div => {
-      div.style.display = 'none';
-    });
+    tabContents.forEach(div => div.style.display = 'none');
     const tab = document.getElementById(tabId);
     if (tab) tab.style.display = 'block';
   }
   window.showTab = showTab;
-  const tagIds = ['forestTag', 'shipwreckTag', 'ironTag', 'stoneTag', 'ruinsTag', 'loreTag'];
+
+  if (buildTabBtn) buildTabBtn.addEventListener('click', () => showTab('build-tab'));
+  if (postTabBtn) postTabBtn.addEventListener('click', () => showTab('post-tab'));
+  if (profileTabBtn) profileTabBtn.addEventListener('click', () => showTab('profile-tab'));
+
+  if (yearlyContainer) {
+    phases.forEach(p => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "year-block";
+      wrapper.innerHTML = `
+        <h4>${p.label}</h4>
+        <textarea id="steps-${p.id}" rows="5" placeholder="One instruction per line..."></textarea>
+      `;
+      yearlyContainer.appendChild(wrapper);
+    });
+  }
+
+  mapSelectors.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '';
+    const off = document.createElement('option');
+    off.value = 'Off';
+    off.textContent = 'Off';
+    sel.appendChild(off);
+    mapsData.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.name;
+      opt.textContent = m.name;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => renderMapPreview(id, sel.value));
+  });
+
+  function renderMapPreview(selectorId, mapName) {
+    const slot = document.getElementById(selectorId + 'Preview');
+    if (!slot) return;
+    slot.innerHTML = '';
+    if (!mapName || mapName === 'Off') return;
+    const img = document.createElement('img');
+    img.src = mapByName[mapName] || '';
+    img.alt = mapName;
+    const cap = document.createElement('div');
+    cap.className = 'map-name';
+    cap.textContent = mapName;
+    slot.appendChild(img);
+    slot.appendChild(cap);
+  }
+
   onAuthStateChanged(auth, (user) => {
     if (user) {
       loginSection.style.display = 'none';
@@ -149,94 +160,103 @@ document.addEventListener("DOMContentLoaded", () => {
       showTab('build-tab');
       authStatus.textContent = `✅ Logged in as ${user.email}`;
       loadUserBuilds(user.uid);
-      console.log("🟢 onAuthStateChanged: Logged in as", user.email);
-      setTimeout(() => {
-        if (refreshBuildsBtn) refreshBuildsBtn.click();
-      }, 200);
+      setTimeout(() => { if (refreshBuildsBtn) refreshBuildsBtn.click(); }, 200);
     } else {
       loginSection.style.display = 'block';
       homeScreen.style.display = 'none';
       buildList.innerHTML = '';
       buildSelector.innerHTML = '';
       authStatus.textContent = '🔒 Please log in';
-      console.log("🔒 onAuthStateChanged: Logged out");
     }
   });
 
-
-
-  const refreshBuildsBtn = document.getElementById('refreshBuildsBtn');
-  refreshBuildsBtn.addEventListener('click', async () => {
-    await loadBuilds (true, true);
-    const user = auth.currentUser;
-    if (user) await loadUserBuilds(user.uid);
-    const selectedClan = clanFilter.value;
-    if (selectedClan === "All") {
-      updateBuildSelector(buildData);
-    } else {
-      const filtered = Object.fromEntries(
-        Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan)
-      );
-      updateBuildSelector(filtered);
-    }
-  });
-
-  for (let year = 800; year <= 804; year++) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "year-block";
-    wrapper.innerHTML = `
-      <h4>Year ${year}</h4>
-      <textarea id="steps-${year}" rows="4" placeholder="Steps for ${year}..."></textarea>
-      <label>
-        <input type="checkbox" id="toggle-winter-${year}" />
-        Add Winter Steps for ${year}
-      </label>
-      <textarea id="steps-${year}-winter" style="display: none;" rows="3" placeholder="Winter ${year} steps..."></textarea>
-    `;
-    yearlyContainer.appendChild(wrapper);
-  }
-
-  for (let year = 800; year <= 804; year++) {
-    const toggle = document.getElementById(`toggle-winter-${year}`);
-    const winterBox = document.getElementById(`steps-${year}-winter`);
-    toggle.addEventListener("change", () => {
-      winterBox.style.display = toggle.checked ? "block" : "none";
+  if (refreshBuildsBtn) {
+    refreshBuildsBtn.addEventListener('click', async () => {
+      await loadBuilds(true, true);
+      const user = auth.currentUser;
+      if (user) await loadUserBuilds(user.uid);
+      const selectedClan = clanFilter.value;
+      if (selectedClan === "All") {
+        updateBuildSelector(buildData);
+      } else {
+        const filtered = Object.fromEntries(
+          Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan)
+        );
+        updateBuildSelector(filtered);
+      }
     });
   }
-  logoutBtn.addEventListener('click', async () => {
-    try {
-      localStorage.removeItem("stayLoggedIn");  // 🧼 optional
-      await auth.signOut();
-      authStatus.textContent = "Logged out successfully";
-    } catch (err) {
-      console.error("logout error:", err);
-      authStatus.textContent = "Error Logging out";
-    }
-  });
 
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        localStorage.removeItem("stayLoggedIn");
+        await auth.signOut();
+        authStatus.textContent = "Logged out successfully";
+      } catch (err) {
+        console.error("logout error:", err);
+        authStatus.textContent = "Error Logging out";
+      }
+    });
+  }
+
+  function getEmojiForStep(step) {
+    const lower = step.toLowerCase();
+    if (lower.includes("wood") || lower.includes("lodge") || lower.includes("logging")) return "🌲";
+    if (lower.includes("house") || lower.includes("hall") || lower.includes("clan hall") || lower.includes("town hall")) return "🏠";
+    if (lower.includes("scout")) return "🧭";
+    if (lower.includes("colonize")) return "📍";
+    if (lower.includes("training") || lower.includes("military") || lower.includes("barracks")) return "⚔️";
+    if (lower.includes("feast")) return "🍽️";
+    if (lower.includes("clear") || lower.includes("attack")) return "🛡️";
+    if (lower.includes("trade post")) return "🏦";
+    if (lower.includes("warchief")) return "🪓";
+    if (lower.includes("brewery")) return "🍺";
+    if (lower.includes("mine") || lower.includes("mining")) return "⛏️";
+    if (lower.includes("fish") || lower.includes("fisherman")) return "🐟";
+    if (lower.includes("merchant")) return "🛍️";
+    if (lower.includes("forge") || lower.includes("smithy")) return "🛠️";
+    if (lower.includes("altar")) return "🕯️";
+    if (lower.includes("relic")) return "🗿";
+    if (lower.includes("ready")) return "✅";
+    if (lower.includes("church")) return "⛪";
+    if (lower.includes("stables") || lower.includes("cavalier")) return "🐎";
+    if (lower.includes("archer")) return "🏹";
+    if (lower.includes("cannoneer")) return "💣";
+    if (lower.includes("warrior") || lower.includes("swordsman")) return "🗡️";
+    if (lower.includes("muncher")) return "🦷";
+    if (lower.includes("barricade")) return "🪵";
+    if (lower.includes("potion")) return "🧪";
+    if (lower.includes("farm") || lower.includes("farmland")) return "🌾";
+    if (lower.includes("tower")) return "🏰";
+    return "•";
+  }
+
+  function renderBuildSteps(steps) {
+    return (steps || []).map(step => {
+      if (step.startsWith("#")) {
+        return `<h4 class="phase-header">📅 ${step.slice(1).trim()}</h4>`;
+      }
+      return `<div class="build-step">${getEmojiForStep(step)} ${step}</div>`;
+    }).join("");
+  }
+
+  let buildData = {};
 
   function showBuild(name, data = buildData) {
     const build = data[name];
+    if (!build) return;
     let html = '';
-    
-    html += `<details class="build-section"open>
+    html += `<details class="build-section" open>
       <summary><strong>📋 Build Info</strong></summary>`;
     if (build.username) {
       html += `<p><strong>👤 Submitted by:</strong> ${build.username}</p><hr>`;
     }
-    if (build.militaryPath) {
-      html += `<h4>⚔️ Military Path</h4><p>${build.militaryPath}</p><hr>`;
+    if ((build.upgrades || []).length > 0) {
+      html += `<h4>⬆ Upgrades</h4><p>${build.upgrades.join(", ")}</p><hr>`;
     }
-
-    if (build.loreOrder && build.loreOrder.length > 0) {
-      html += `<h4>📜 Lore Order</h4><ul class="lore-order-list">`;
-      build.loreOrder.forEach((lore, index) => {
-        html += `<li>${index + 1}. ${lore}</li>`;
-      });
-      html += `</ul>`;
-    }
-    if (build.situationalTags && build.situationalTags.length > 0) {
-      html += `<h4>🌍 Situational Tags</h4><div class="tag-pill-container">`;
+    if ((build.situationalTags || []).length > 0) {
+      html += `<h4>🗺️ Applicable Maps</h4><div class="tag-pill-container">`;
       build.situationalTags.forEach(tag => {
         html += `<span class="tag-pill">${tag}</span>`;
       });
@@ -252,36 +272,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (const buildName in filteredData) {
       const build = filteredData[buildName];
-      if (!build || !build.steps || !Array.isArray(build.steps)) continue;
+      if (!build || !Array.isArray(build.steps)) continue;
+
       const option = document.createElement('option');
       option.value = buildName;
       option.textContent = buildName;
       buildSelector.appendChild(option);
-      const preview = document.createElement('div')
+
+      const preview = document.createElement('div');
       preview.className = 'build-preview';
       const tagText = (build.situationalTags || []).join(', ') || 'None';
-      const isOwnBuild = auth.currentUser?.uid === build.userID;
+      const isOwnBuild = window.auth.currentUser?.uid === build.userID;
       const canUpvote = !isOwnBuild;
       const upvoteCount = build.upvotes?.length || 0;
-      const previewHTML = `
+
+      preview.innerHTML = `
         <h4>${buildName} (${build.clan})</h4>
         <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
-        <p><strong>Tags:</strong> ${tagText}</p>
-        ${canUpvote 
-          ? `<button class="upvote-btn" onclick="upvoteBuild('${buildName}')">🔼 Upvote</button>` 
-          : `<em>Can't upvote own build</em>`}
+        <p><strong>Maps:</strong> ${tagText}</p>
+        ${canUpvote ? `<button class="upvote-btn" data-build="${buildName}" type="button">🔼 Upvote</button>` : `<em>Can't upvote own build</em>`}
         <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
-        <button onclick="openBuildInWindow('${buildName}')">View</button>
+        <button class="view-btn" data-build="${buildName}" type="button">View</button>
       `;
-      preview.innerHTML = previewHTML;
       buildList.appendChild(preview);
     }
+
     if (buildSelector.options.length > 0) {
       buildSelector.selectedIndex = 0;
       showBuild(buildSelector.value, filteredData);
     } else {
-      buildList.innerHTML = '<li>No builds for this clan.</li>';
+      buildList.innerHTML = '<li>No builds for this faction.</li>';
     }
+  }
+
+  if (buildList) {
+    buildList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      if (btn.classList.contains('view-btn')) {
+        const name = btn.dataset.build;
+        openBuildInWindow(name);
+      }
+      if (btn.classList.contains('upvote-btn')) {
+        const name = btn.dataset.build;
+        upvoteBuild(name);
+      }
+    });
   }
 
   window.loadBuilds = async function (forceRefresh = false, skipInitialDisplay = false) {
@@ -293,431 +329,242 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
     }
-
     const querySnapshot = await getDocs(collection(db, "builds"));
     buildData = {};
-
     querySnapshot.forEach((doc) => {
       const build = doc.data();
       buildData[build.name] = {
         steps: build.steps,
         clan: build.clan,
-        loreOrder: build.loreOrder || [],
-        loreMode: build.loreMode || 'json',
-        militaryPath: build.militaryPath || '',
         situationalTags: build.situationalTags || [],
         username: build.username || "Unknown",
-        upvotes: build.upvotes || []
+        upvotes: build.upvotes || [],
+        upgrades: build.upgrades || []
       };
     });
-
     localStorage.setItem("cachedBuilds", JSON.stringify(buildData));
     if (!skipInitialDisplay) updateBuildSelector(buildData);
   };
 
-
-  clanFilter.addEventListener('change', () => {
-    const selectedClan = clanFilter.value;
-
-    if (selectedClan === "All") {
-      updateBuildSelector(buildData);
-    } else {
-      const filtered = Object.fromEntries(
-        Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan)
-      );
-      updateBuildSelector(filtered);
-    }
-  });
-
-  buildSelector.addEventListener('change', () => {
-    showBuild(buildSelector.value);
-  });
-
-  registerBtn.addEventListener('click', () => {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('register-screen').style.display = 'block';
-  });
-
-  document.getElementById('backToLoginBtn').addEventListener('click', () => {
-    document.getElementById('register-screen').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'block';
-  });
-
-  document.getElementById('finalizeRegisterBtn').addEventListener('click', async () => {
-    const username = document.getElementById('reg-username').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const password = document.getElementById('reg-password').value;
-
-    if (!username || !email || !password) {
-      document.getElementById('registerStatus').textContent = "Fill in all fields.";
-      return;
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      await addDoc(collection(db, "users"), {
-        uid: user.uid,
-        username: username,
-        email: email
-      });
-      document.getElementById('registerStatus').textContent = "✅ Registered!";
-    } catch (err) {
-      document.getElementById('registerStatus').textContent = `❌ ${err.message}`;
-    }
-  });
-
-  loginBtn.addEventListener('click', async () => {
-    const identifier = document.getElementById('loginIdentifier').value.trim();
-    const password = document.getElementById('password').value;
-    const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
-    localStorage.setItem("stayLoggedIn", stayLoggedIn);
-    if (!identifier || !password) {
-      authStatus.textContent = "Please fill in all fields.";
-      return;
-    }
-
-    try {
-      let emailToUse = identifier;
-
-      if (!identifier.includes('@')) {
-        const q = window.query(window.collection(window.db, "users"), window.where("username", "==", identifier));
-        const snap = await window.getDocs(q);
-        if (snap.empty) {
-          authStatus.textContent = "❌ Username not found.";
-          return;
-        }
-        emailToUse = snap.docs[0].data().email;
-      }
-      console.log("Persistence mode:", stayLoggedIn ? "LOCAL" : "SESSION");
-      await window.setPersistence(
-        window.auth,
-        stayLoggedIn ? window.browserLocalPersistence : window.browserSessionPersistence
-      );
-
-      await window.signInWithEmailAndPassword(window.auth, emailToUse, password);
-      authStatus.textContent = "✅ Logged in!";
-    } catch (error) {
-      console.error("Login Error:", error);
-      authStatus.textContent = `❌ ${error.message}`;
-    }
-  });
-
-  submitBtn.addEventListener('click', async () => {
-    const buildName = newName.value.trim();
-    const selectedClan = newClan.value;
-    const user = auth.currentUser;
-    const uid = user.uid;
-    const selectedPath = pathSelector.value;
-    const userSnapshot = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-    const username = userSnapshot.empty ? user.email : userSnapshot.docs[0].data().username;
-    let selectedLores = loreOrderState.map(item => item.lore);
-    const situationalTags = tagIds
-    .map(id => document.getElementById(id).value)
-    .filter(tag => tag !== "Off");
-    let allSteps = [];
-    if (loreJsonMode.checked) {
-      selectedLores = loreOrderState.map(item => item.lore);
-    } else if (loreTreeMode.checked) {
-      const treeWindow = loreTreeFrame.contentWindow;
-      if (treeWindow && typeof treeWindow.getSelectedLores === "function") {
-      selectedLores = treeWindow.getSelectedLoreIndexes();
+  if (clanFilter) {
+    clanFilter.addEventListener('change', () => {
+      const selectedClan = clanFilter.value;
+      if (selectedClan === "All") {
+        updateBuildSelector(buildData);
       } else {
-        statusMsg.textContent = "❌ Could not get lore from lore tree.";
+        const filtered = Object.fromEntries(
+          Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan)
+        );
+        updateBuildSelector(filtered);
+      }
+    });
+  }
+  if (buildSelector) {
+    buildSelector.addEventListener('change', () => {
+      showBuild(buildSelector.value);
+    });
+  }
+
+  if (registerBtn) {
+    registerBtn.addEventListener('click', () => {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('register-screen').style.display = 'block';
+    });
+  }
+  const backToLoginBtn = document.getElementById('backToLoginBtn');
+  if (backToLoginBtn) {
+    backToLoginBtn.addEventListener('click', () => {
+      document.getElementById('register-screen').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'block';
+    });
+  }
+  const finalizeRegisterBtn = document.getElementById('finalizeRegisterBtn');
+  if (finalizeRegisterBtn) {
+    finalizeRegisterBtn.addEventListener('click', async () => {
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      if (!username || !email || !password) {
+        document.getElementById('registerStatus').textContent = "Fill in all fields.";
         return;
       }
-    }
-    if (selectedLores.length === 0) {
-      statusMsg.textContent = "⚠️ Please select at least one Lore.";
-      return;
-    }
-    for (let year = 800; year <= 804; year++) {
-      const mainSteps = document.getElementById(`steps-${year}`).value.trim().split("\n").filter(Boolean);
-      if (mainSteps.length > 0) {
-        allSteps.push(`# ${year}`);
-        allSteps.push(...mainSteps);
-      }
-      const winterSteps = document.getElementById(`steps-${year}-winter`).value.trim().split("\n").filter(Boolean);
-      if (winterSteps.length > 0) {
-        allSteps.push(`# ${year} Winter`);
-        allSteps.push(...winterSteps);
-      }
-    }
-    if (!user) {
-      statusMsg.textContent = "You must be logged in to submit a Build!";
-      return;
-    }
-    if (!buildName || allSteps.length === 0 || !selectedClan) {
-      statusMsg.textContent = "⚠️ Enter a build name, steps, and select a Clan";
-      return;
-    }
-    if (buildSubmitCooldown) {
-      statusMsg.textContent = "⏳ Please wait before submitting again.";
-      return;
-    }
-    buildSubmitCooldown = true;
-    setTimeout(() => {
-      buildSubmitCooldown = false;
-    }, 5000);
-    try {
-      await addDoc(collection(db, "builds"), {
-        name: buildName,
-        steps: allSteps,
-        clan: selectedClan,
-        situationalTags: situationalTags,
-        userID: user.uid,
-        username: username || user.email,
-        militaryPath: selectedPath,
-        loreOrder: selectedLores,
-        loreMode: loreMode,
-        upvotes: []
-      });
-
-      statusMsg.textContent = "✅ Build submitted!";
-      localStorage.removeItem("cachedBuilds");
-      await loadBuilds();
-      await loadUserBuilds(user.uid);
-    } catch (err) {
-      console.error("Error submitting build:", err);
-      statusMsg.textContent = "❌ Error submitting build. Check console.";
-    }
-    newName.value = "";
-    newClan.selectedindex = 0;
-    lorePicker.innerHTML = '';
-    loreOrderState = [];
-    for (let year = 800; year <= 804; year++) {
-      document.getElementById(`steps-${year}`).value = '';
-      document.getElementById(`steps-${year}-winter`).value = '';
-      document.getElementById(`toggle-winter-${year}`).checked = false;
-      document.getElementById(`steps-${year}-winter`).style.display = 'none';
-    }
-    pathSelector.innerHTML = '';
-    tagIds.forEach(id => {
-      const dropdown = document.getElementById(id);
-      dropdown.selectedIndex = 0;
-    });
-    const allBuildsSnap = await getDocs(collection(db, "builds"));
-    const upvoted = [];
-
-    allBuildsSnap.forEach(doc => {
-      const build = doc.data();
-      if ((build.upvotes || []).includes(user.uid) && build.userID !== uid) {
-        upvoted.push({ ...build, docId: doc.id });
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await addDoc(collection(db, "users"), { uid: user.uid, username, email });
+        document.getElementById('registerStatus').textContent = "✅ Registered!";
+      } catch (err) {
+        document.getElementById('registerStatus').textContent = `❌ ${err.message}`;
       }
     });
-
-    if (upvoted.length > 0) {
-      const upvotedHeader = document.createElement("h3");
-      upvotedHeader.textContent = "⭐ Builds You’ve Upvoted";
-      container.appendChild(upvotedHeader);
-
-      upvoted.forEach(build => {
-        const card = document.createElement("div");
-        card.className = "build-card";
-        const upvoteCount = build.upvotes?.length || 0;
-
-        card.innerHTML = `
-          <h4>${build.name || "Untitled"} (${build.clan})</h4>
-          <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
-          <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
-          <button onclick="openBuildInWindow('${build.name}')">View</button>
-        `;
-        container.appendChild(card);
-      });
-    }
-  });
-
-
-  function closeApp() {
-    ipcRenderer.send('request-app-close');
   }
-  window.closeApp = closeApp;
 
-///  ipcRenderer.on('logout-before-close', () => {
-//    const stayLoggedIn = localStorage.getItem("stayLoggedIn") === "true";
-
- //   if (!stayLoggedIn) {
-  //    auth.signOut().then(() => {
-   //     console.log("🔒 Logged out before app closed.");
-    //    window.close();
-    //  });
-    //} else {
-     // console.log("✅ Staying logged in after close.");
-      //window.close();
-   // }
-  //});
-  const toggleBtn = document.getElementById('toggleSituationalTags');
-  const situationalContent = document.getElementById('situationalTagsContent');
-
-  if (toggleBtn && situationalContent) {
-    toggleBtn.addEventListener('click', () => {
-      const isVisible = situationalContent.style.display === 'block';
-      situationalContent.style.display = isVisible ? 'none' : 'block';
-      toggleBtn.textContent = isVisible ? '+ Situational Tags' : '− Situational Tags';
+  if (loginBtn) {
+    loginBtn.addEventListener('click', async () => {
+      const identifier = emailInput.value.trim();
+      const password = passwordInput.value;
+      const stay = document.getElementById('stayLoggedIn').checked;
+      localStorage.setItem("stayLoggedIn", stay);
+      if (!identifier || !password) {
+        authStatus.textContent = "Please fill in all fields.";
+        return;
+      }
+      try {
+        let emailToUse = identifier;
+        if (!identifier.includes('@')) {
+          const q = window.query(window.collection(window.db, "users"), window.where("username", "==", identifier));
+          const snap = await window.getDocs(q);
+          if (snap.empty) {
+            authStatus.textContent = "❌ Username not found.";
+            return;
+          }
+          emailToUse = snap.docs[0].data().email;
+        }
+        await window.setPersistence(window.auth, stay ? window.browserLocalPersistence : window.browserSessionPersistence);
+        await window.signInWithEmailAndPassword(window.auth, emailToUse, password);
+        authStatus.textContent = "✅ Logged in!";
+      } catch (error) {
+        console.error("Login Error:", error);
+        authStatus.textContent = `❌ ${error.message}`;
+      }
     });
   }
-  function getEmojiForStep(step) {
-    const lower = step.toLowerCase();
-    if (lower.includes("wood") || lower.includes("lodge")) return "🌲";
-    if (lower.includes("house")) return "🏠";
-    if (lower.includes("scout")) return "🧭";
-    if (lower.includes("colonize")) return "📍";
-    if (lower.includes("training") || lower.includes("military")) return "⚔️";
-    if (lower.includes("feast")) return "🍽️";
-    if (lower.includes("clear") || lower.includes("attack")) return "🛡️";
-    if (lower.includes("trade post")) return "🏦";
-    if (lower.includes("warchief")) return "🪓";
-    if (lower.includes("brewery")) return "🍺";
-    if (lower.includes("mine") || lower.includes("mining")) return "⛏️";
-    if (lower.includes("fish")) return "🐟";
-    if (lower.includes("merchant")) return "🛍️";
-    if (lower.includes("fisherman")) return "🎣";
-    if (lower.includes("forge")) return "🛠️";
-    if (lower.includes("altar")) return "🕯️";
-    if (lower.includes("relic")) return "🗿";
-    if (lower.includes("ready")) return "✅";
-    return "•";
+
+  const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+  if (forgotPasswordBtn) {
+    forgotPasswordBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) {
+        authStatus.textContent = "Enter your email first";
+        return;
+      }
+      try {
+        await window.sendPasswordResetEmail(window.auth, email);
+        authStatus.textContent = "Reset email sent!";
+      } catch (error) {
+        authStatus.textContent = `Error: ${error.message}`;
+      }
+    });
   }
 
-  function renderBuildSteps(steps) {
-    return steps.map(step => {
-      if (step.startsWith("#")) {
-        return `<h4 class="phase-header">📅 ${step.slice(1).trim()}</h4>`;
-      } else {
-        return `<div class="build-step">${getEmojiForStep(step)} ${step}</div>`;
-      }
-    }).join("");
-  }
-  async function loadUserBuilds(uid) {
-    const container = document.getElementById("profileBuildsContainer");
-    container.innerHTML = "<p>Loading your builds...</p>";
+  let buildSubmitCooldown = false;
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const buildName = newName.value.trim();
+      const selectedClan = newClan.value;
+      const user = auth.currentUser;
+      const upgrades = upgradesInput.value.trim().split("\n").filter(Boolean);
 
-    try {
-      const buildsRef = collection(db, "builds");
-      const q = window.query(buildsRef, window.where("userID", "==", uid));
-      const querySnapshot = await getDocs(q);
-
-      container.innerHTML = "";
-
-      if (querySnapshot.empty) {
-        container.innerHTML = "<p>No builds yet</p>";
-      } else {
-        querySnapshot.forEach((doc) => {
-          const build = doc.data();
-          const card = document.createElement("div");
-          card.className = "build-card";
-          card.innerHTML = `
-            <h3>${build.name || "Untitled"} (${build.clan})</h3>
-            <p><strong>👤 Username:</strong> ${build.username || "Unknown"}</p>
-            <div class="steps-block">${renderBuildSteps(build.steps || [])}</div>
-            <button class="delete-btn" data-id="${doc.id}">Delete</button>
-          `;
-          container.appendChild(card);
-        });
-
-        container.querySelectorAll('.delete-btn').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const id = btn.dataset.id;
-            if (confirm("Are you sure you want to delete this build?")) {
-              try {
-                await window.deleteDoc(window.doc(db, "builds", id));
-                await loadUserBuilds(uid);
-                const uid = user.uid;
-                localStorage.removeItem("cachedBuilds");
-                await loadBuilds(true, true);
-              } catch (err) {
-                console.error("Delete Error:", err);
-                alert("Error deleting build. See console.");
-              }
-            }
-          });
-        });
-      }
-
-      const allBuildsSnap = await getDocs(buildsRef);
-      const upvoted = [];
-
-      allBuildsSnap.forEach(doc => {
-        const build = doc.data();
-        if ((build.upvotes || []).includes(uid) && build.userID !== uid) {
-          upvoted.push({ ...build, docId: doc.id });
+      let allSteps = [];
+      const headerMap = { early: "Early Game", mid: "Mid Game", late: "Late Game" };
+      phases.forEach(p => {
+        const ta = document.getElementById(`steps-${p.id}`);
+        const lines = (ta?.value || '').trim().split("\n").filter(Boolean);
+        if (lines.length > 0) {
+          allSteps.push(`# ${headerMap[p.id]}`);
+          allSteps.push(...lines);
         }
       });
 
-      if (upvoted.length > 0) {
-        const upvotedHeader = document.createElement("h3");
-        upvotedHeader.textContent = "⭐ Builds You’ve Upvoted";
-        container.appendChild(upvotedHeader);
+      const situationalTags = mapSelectors
+        .map(id => document.getElementById(id)?.value)
+        .filter(v => v && v !== "Off");
 
-        upvoted.forEach(build => {
-          const card = document.createElement("div");
-          card.className = "build-card";
-          const upvoteCount = build.upvotes?.length || 0;
-          card.innerHTML = `
-            <h4>${build.name || "Untitled"} (${build.clan})</h4>
-            <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
-            <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
-            <button onclick="openBuildInWindow('${build.name}')">View</button>
-          `;
-          container.appendChild(card);
+      if (!user) {
+        statusMsg.textContent = "You must be logged in to submit a Build!";
+        return;
+      }
+      if (!buildName || allSteps.length === 0 || !selectedClan) {
+        statusMsg.textContent = "⚠️ Enter a build name, steps, and select a Faction";
+        return;
+      }
+      if (buildSubmitCooldown) {
+        statusMsg.textContent = "⏳ Please wait before submitting again.";
+        return;
+      }
+      buildSubmitCooldown = true;
+      setTimeout(() => { buildSubmitCooldown = false; }, 5000);
+
+      try {
+        const userSnapshot = await getDocs(window.query(window.collection(window.db, "users"), window.where("uid", "==", user.uid)));
+        const username = userSnapshot.empty ? user.email : userSnapshot.docs[0].data().username;
+
+        await addDoc(collection(db, "builds"), {
+          name: buildName,
+          steps: allSteps,
+          clan: selectedClan,
+          situationalTags,
+          userID: user.uid,
+          username: username || user.email,
+          upgrades,
+          upvotes: []
         });
+
+        statusMsg.textContent = "✅ Build submitted!";
+        localStorage.removeItem("cachedBuilds");
+        await loadBuilds(true, true);
+        await loadUserBuilds(user.uid);
+      } catch (err) {
+        console.error("Error submitting build:", err);
+        statusMsg.textContent = "❌ Error submitting build. Check console.";
       }
 
-    } catch (error) {
-      console.error("Error Loading Builds:", error);
-      container.innerHTML = "<p>Failed to load builds. Try again later.</p>";
-    }
+      newName.value = "";
+      newClan.selectedIndex = 0;
+      upgradesInput.value = "";
+      phases.forEach(p => {
+        const ta = document.getElementById(`steps-${p.id}`);
+        if (ta) ta.value = '';
+      });
+      mapSelectors.forEach(id => {
+        const el = document.getElementById(id);
+        const prev = document.getElementById(id + 'Preview');
+        if (el) el.selectedIndex = 0;
+        if (prev) prev.innerHTML = '';
+      });
+    });
   }
 
+  let openingBuildWindow = false;
   function openBuildInWindow(name) {
+    if (openingBuildWindow) return;
+    openingBuildWindow = true;
+    setTimeout(() => openingBuildWindow = false, 300);
     const build = buildData[name];
-    const buildWithName = { ...build, name }; 
+    const buildWithName = { ...build, name };
+    const fromTags = (build.situationalTags || [])
+      .map(n => mapByName[n])
+      .filter(Boolean);
+
+    const fromApplicable = Array.isArray(build.applicableMaps)
+      ? build.applicableMaps.map(m =>
+          typeof m === 'string' ? (mapByName[m] || '') : (m.image || '')
+        ).filter(Boolean)
+      : [];
+
+     buildWithName.mapImages = fromTags.length ? fromTags : fromApplicable;
     ipcRenderer.send('open-build-window', buildWithName);
   }
   window.openBuildInWindow = openBuildInWindow;
 
-  const forgotPasswordBtn = document.getElementById('forgotPasswordBtn')
-  forgotPasswordBtn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    if (!email) {
-      authStatus.textContent = "Enter your email first";
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      authStatus.textContent = "Reset email sent!"
-    } catch (error) {
-      authStatus.textContent =`Error: ${error.message}`;
-    }
-  });
-
-  ipcRenderer.on('app-version', (_, version) => {
-    document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;bottom:10px;right:10px;color:#999;">v${version}</div>`);
-  });  
-
   async function upvoteBuild(name) {
     const user = auth.currentUser;
     if (!user) return alert("You must be logged in to upvote!");
-
     const build = buildData[name];
-    const buildRef = query(collection(db, "builds"), where("name", "==", name));
-    const snapshot = await getDocs(buildRef);
-
+    const buildRef = window.query(collection(db, "builds"), window.where("name", "==", name));
+    const snapshot = await window.getDocs(buildRef);
     if (snapshot.empty) return alert("Build not found.");
-
     const docRef = snapshot.docs[0].ref;
     const currentUpvotes = build.upvotes || [];
-
     if (currentUpvotes.includes(user.uid)) {
       alert("You already upvoted this build!");
       return;
     }
-
     try {
       const updatedVotes = [...currentUpvotes, user.uid];
-      await updateDoc(docRef, { upvotes: updatedVotes });
+      await window.updateDoc(docRef, { upvotes: updatedVotes });
       localStorage.removeItem("cachedBuilds");
-      await loadBuilds(true, true); 
+      await loadBuilds(true, true);
       const selectedClan = clanFilter.value;
       const filtered = selectedClan === "All"
         ? buildData
@@ -729,11 +576,93 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   window.upvoteBuild = upvoteBuild;
-  function forceInputFocus(targetId) {
-    const trap = document.getElementById("focusTrap");
-    const target = document.getElementById(targetId);
-    if (!trap || !target) return;
+
+  let profileClicksBound = false;
+  async function loadUserBuilds(uid) {
+    const container = document.getElementById("profileBuildsContainer");
+    container.innerHTML = "<p>Loading your builds...</p>";
+    try {
+      const buildsRef = collection(db, "builds");
+      const q = window.query(buildsRef, window.where("userID", "==", uid));
+      const querySnapshot = await getDocs(q);
+      container.innerHTML = "";
+      if (querySnapshot.empty) {
+        container.innerHTML = "<p>No builds yet</p>";
+      } else {
+        querySnapshot.forEach((doc) => {
+          const build = doc.data();
+          const card = document.createElement("div");
+          card.className = "build-card";
+          card.innerHTML = `
+            <h3>${build.name || "Untitled"} (${build.clan})</h3>
+            <p><strong>👤 Username:</strong> ${build.username || "Unknown"}</p>
+            ${build.upgrades && build.upgrades.length ? `<p><strong>⬆ Upgrades:</strong> ${build.upgrades.join(", ")}</p>` : ""}
+            <div class="steps-block">${renderBuildSteps(build.steps || [])}</div>
+            <button class="delete-btn" data-id="${doc.id}" type="button">Delete</button>
+            <button class="view-btn" data-build="${build.name}" type="button">View</button>
+          `;
+          container.appendChild(card);
+        });
+
+        if (!profileClicksBound) {
+          container.addEventListener('click', async (e) => {
+            const t = e.target.closest('button');
+            if (!t) return;
+            if (t.classList.contains('delete-btn')) {
+              const id = t.dataset.id;
+              if (confirm("Are you sure you want to delete this build?")) {
+                try {
+                  await window.deleteDoc(window.doc(db, "builds", id));
+                  localStorage.removeItem("cachedBuilds");
+                  await loadUserBuilds(uid);
+                  await loadBuilds(true, true);
+                } catch (err) {
+                  console.error("Delete Error:", err);
+                  alert("Error deleting build. See console.");
+                }
+              }
+            }
+            if (t.classList.contains('view-btn')) {
+              const name = t.dataset.build;
+              openBuildInWindow(name);
+            }
+          });
+          profileClicksBound = true;
+        }
+      }
+
+      const allBuildsSnap = await getDocs(collection(db, "builds"));
+      const upvoted = [];
+      allBuildsSnap.forEach(doc => {
+        const build = doc.data();
+        if ((build.upvotes || []).includes(uid) && build.userID !== uid) {
+          upvoted.push({ ...build, docId: doc.id });
+        }
+      });
+      if (upvoted.length > 0) {
+        const upvotedHeader = document.createElement("h3");
+        upvotedHeader.textContent = "⭐ Builds You’ve Upvoted";
+        container.appendChild(upvotedHeader);
+        upvoted.forEach(build => {
+          const card = document.createElement("div");
+          card.className = "build-card";
+          const upvoteCount = build.upvotes?.length || 0;
+          card.innerHTML = `
+            <h4>${build.name || "Untitled"} (${build.clan})</h4>
+            <p><strong>👤 Submitted by:</strong> ${build.username || "Unknown"}</p>
+            <p>👍 ${upvoteCount} Upvote${upvoteCount === 1 ? '' : 's'}</p>
+            <button class="view-btn" data-build="${build.name}" type="button">View</button>
+          `;
+          container.appendChild(card);
+        });
+      }
+    } catch (error) {
+      console.error("Error Loading Builds:", error);
+      container.innerHTML = "<p>Failed to load builds. Try again later.</p>";
+    }
   }
 
-  //loadBuilds();
+  ipcRenderer.on('app-version', (_, version) => {
+    document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;bottom:10px;right:10px;color:#999;">v${version}</div>`);
+  });
 });

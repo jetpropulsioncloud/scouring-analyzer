@@ -1,35 +1,38 @@
-# 🔐 Security Policy
+# 🛡️ Security Policy
 
 ## Supported Versions
 
-We are currently in early development. Only the latest public test release is supported.
+The Grand Lodge is currently in active development.  
+Only the **latest public release** receives updates and support.
 
-| Version | Supported |
-|---------|-----------|
-| v3.0.0  | ✅         |
-| < 3.0.0 | ❌         |
+| Version  | Supported |
+|----------|-----------|
+| Latest   | ✅         |
+| Older    | ❌         |
 
 ---
 
 ## 📣 Reporting a Vulnerability
 
-If you discover a security vulnerability in **The Longhouse**, please help us by reporting it **privately**.
+If you discover a vulnerability in **The Grand Lodge**, please report it **privately** so we can address it quickly.
 
-### Please do not:
-- Post it publicly in GitHub issues or discussions
-- Exploit it or test it on other users
-- Share the vulnerability with others before it's patched
+### Please avoid:
+- Posting details publicly in GitHub issues or discussions  
+- Testing or exploiting the vulnerability on other users  
+- Sharing the vulnerability before a fix is released  
 
-### Instead:
-- Email: `jetpropulsioncloud@gmail.com` (or another email if you prefer)
-- Or DM me directly on Reddit/Discord if you're part of the community post
+### Instead, contact:
+- **Email:** `jetpropulsioncloud@gmail.com`  
+- **Discord/Reddit DM:** If you are part of our community channels  
 
-We will respond as soon as possible and aim to resolve critical issues quickly.
+We will acknowledge your report promptly and work to resolve critical issues as soon as possible.
 
 ---
 
-## 🔐 Additional Notes
+## ⚔️ Additional Notes
 
-This project is currently in **testing and hobby phase**. While security is important to us, it is not production-grade. Please use the app with that in mind.
+- This project is still in its **testing & hobby** phase.  
+- While we take security seriously, the app is **not production-grade**.  
+- Use with that understanding in mind.  
 
-Thank you for helping keep the project safe!
+Your help in keeping the app safe is greatly appreciated.

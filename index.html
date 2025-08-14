@@ -1,9 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="icon" type="image/x-icon" href="assets/longhouse-icon.ico">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    base-uri 'self';
+    object-src 'none';
+
+    script-src 'self' https://www.gstatic.com 'nonce-firebase-123';
+
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https://firebasestorage.googleapis.com;
+
+    connect-src
+      'self'
+      https://firestore.googleapis.com
+      https://*.firebaseio.com
+      https://identitytoolkit.googleapis.com
+      https://securetoken.googleapis.com
+      https://www.googleapis.com
+      https://firebasestorage.googleapis.com;
+
+    frame-src 'self';
+  ">
+  <link rel="icon" type="image/x-icon" href="assets/scouring-icon.ico">
   <meta charset="UTF-8">
-  <title>The Longhouse</title>
+  <title>The Grand Lodge</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .header-bar {
@@ -13,24 +34,18 @@
       padding: 8px 10px;
       background-color: rgba(0, 0, 0, 0.2);
     }
-
     nav {
       display: flex;
       justify-content: center;
       gap: 10px;
       margin: 10px 0;
     }
-
     nav button {
       padding: 6px 12px;
       font-weight: bold;
       cursor: pointer;
     }
-
-    .tab-content {
-      padding: 10px;
-    }
-
+    .tab-content { padding: 10px; }
     .title-bar {
       -webkit-app-region: drag;
       cursor: move;
@@ -44,33 +59,33 @@
       justify-content: space-between;
       align-items: center;
     }
-
-    .title-bar * {
-      -webkit-app-region: no-drag;
-    }
+    .title-bar * { -webkit-app-region: no-drag; }
+    .map-preview { margin: 8px 0 16px; }
+    .map-preview img { width: 100%; max-width: 280px; height: auto; border-radius: 8px; display: block; }
+    .map-preview .map-name { font-weight: 600; margin-top: 6px; }
   </style>
 </head>
 <body>
 
 <div class="title-bar">
-  <span>    
-    <img src="assets/longhouse-icon.ico" style="height: 20px; vertical-align: middle; margin-right: 8px;">
-    The Longhouse
+  <span>
+    <img src="assets/scouring-icon.ico" style="height: 20px; vertical-align: middle; margin-right: 8px;" alt="App icon">
+    The Grand Lodge
   </span>
   <div>
     <button id="logoutBtn">Logout</button>
-    <button onclick="closeApp()">X</button>
+    <button id="closeBtn">X</button>
   </div>
 </div>
 
 <div id="login-screen" class="login-box">
-  <h3>The Longhouse — Login / Register</h3>
+  <h3>The Grand Lodge — Login / Register</h3>
   <input type="text" id="loginIdentifier" placeholder="Email or Username" />
   <br><br>
   <input type="password" id="password" placeholder="Password" />
   <br><br>
   <br>
-  <label><input type= "checkbox" id="stayLoggedIn"> Stay Logged In</label>
+  <label><input type="checkbox" id="stayLoggedIn"> Stay Logged In</label>
   <br><br>
   <button id="loginBtn">Login</button>
   <button id="registerBtn">Register</button>
@@ -91,163 +106,87 @@
   <p id="registerStatus"></p>
 </div>
 
-
 <div id="home-screen" style="display: none;">
   <div class="content-wrapper">
     <nav>
-      <button onclick="showTab('build-tab')">Current Builds</button>
-      <button onclick="showTab('post-tab')">Post Build</button>
-      <button onclick="showTab('profile-tab')">Profile</button>
+      <button id="tab-build">Current Builds</button>
+      <button id="tab-post">Post Build</button>
+      <button id="tab-profile">Profile</button>
     </nav>
 
-  <div id="build-tab" class="tab-content">
-    <div class="overlay">
-      <h2>Northgard Build Order</h2>
+    <div id="build-tab" class="tab-content">
+      <div class="overlay">
+        <h2>Builds</h2>
 
-      <label for="clanFilter"><strong>Filter by Clan:</strong></label>
-      <select id="clanFilter">
-        <option value="All">All Clans</option>
-        <option value="Stag">Stag</option>
-        <option value="Goat">Goat</option>
-        <option value="Kraken">Kraken</option>
-        <option value="Wolf">Wolf</option>
-        <option value="Dragon">Dragon</option>
-        <option value="Squirrel">Squirrel</option>
-        <option value="Lion">Lion</option>
-        <option value="Boar">Boar</option>
-        <option value="Snake">Snake</option>
-        <option value="Rat">Rat</option>
-        <option value="Turtle">Turtle</option>
-        <option value="Hippogriff">Hippogriff</option>
-        <option value="Hound">Hound</option>
-        <option value="Lynx">Lynx</option>
-        <option value="Raven">Raven</option>
-        <option value="Bear">Bear</option>
-        <option value="Horse">Horse</option>
-        <option value="Ox">Ox</option>
-        <option value="Eagle">Eagle</option>
-        <option value="Owl">Owl</option>
-        <option value="Stoat">Stoat</option>
-      </select>
-      <br><br>
+        <label for="clanFilter"><strong>Filter by Faction:</strong></label>
+        <select id="clanFilter">
+          <option value="All">All Factions</option>
+          <option value="Human">Human</option>
+          <option value="Orc">Orc</option>
+        </select>
+        <br><br>
+
         <select id="buildSelector"></select>
-      <div id="buildListContainer">
-        <button id="refreshBuildsBtn">🔄 Refresh Builds</button>
-        <ul id="buildList"></ul>
-      </div>
-    </div>
-  </div>
-
-  <div id="profile-tab" class="tab-content" style="display: none;">
-    <div class="overlay">
-      <h2>Your Builds</h2>
-      <div id="profileBuildsContainer">
-        <p>Loading your builds...</p>
-      </div>
-    </div>
-  </div>   
-
-  <div id="post-tab" class="tab-content" style="display: none;">
-    <div class="overlay">
-      <h2>Submit Your Build</h2>
-
-      <div class="situational-tags-container">
-        <button id="toggleSituationalTags" class="collapsible">+ Situational Tags</button>
-        <div id="situationalTagsContent" class="content" style="display: none;">
-          <label for="forestTag">Forest:</label>
-          <select id="forestTag">
-            <option value="Off">Off</option>
-            <option value="Forest">Present</option>
-            <option value="Mobs on Forest">Mobs Present</option>
-          </select>
-
-          <label for="shipwreckTag">Shipwreck:</label>
-          <select id="shipwreckTag">
-            <option value="Off">Off</option>
-            <option value="Shipwreck">Present</option>
-            <option value="Mobs on Shipwreck">Mobs Present</option>
-          </select>
-
-          <label for="ironTag">Iron:</label>
-          <select id="ironTag">
-            <option value="Off">Off</option>
-            <option value="Iron">Present</option>
-            <option value="Mobs on Iron">Mobs Present</option>
-          </select>
-
-          <label for="stoneTag">Stone:</label>
-          <select id="stoneTag">
-            <option value="Off">Off</option>
-            <option value="Stone">Present</option>
-            <option value="Mobs on Stone">Mobs Present</option>
-          </select>
-
-          <label for="ruinsTag">Ruins:</label>
-          <select id="ruinsTag">
-            <option value="Off">Off</option>
-            <option value="Ruins">Present</option>
-            <option value="Mobs on Ruins">Mobs Present</option>
-          </select>
-
-          <label for="loreTag">Lore Stone:</label>
-          <select id="loreTag">
-            <option value="Off">Off</option>
-            <option value="Lore Stone">Present</option>
-            <option value="Mobs on Lore Stone">Mobs Present</option>
-          </select>
+        <div id="buildListContainer">
+          <button id="refreshBuildsBtn">🔄 Refresh Builds</button>
+          <ul id="buildList"></ul>
         </div>
       </div>
+    </div>
 
-      <label for="newName" class="input-label">Build Name:</label>
-      <input id="newName" type="text" placeholder="Build Name" />
-      <br><br>
+    <div id="profile-tab" class="tab-content" style="display: none;">
+      <div class="overlay">
+        <h2>Your Builds</h2>
+        <div id="profileBuildsContainer">
+          <p>Loading your builds...</p>
+        </div>
+      </div>
+    </div>
 
-      <select id="newClan">
-        <option value="" disabled selected>Select Clan</option>
-        <option value="Stag">Stag</option>
-        <option value="Goat">Goat</option>
-        <option value="Kraken">Kraken</option>
-        <option value="Wolf">Wolf</option>
-        <option value="Dragon">Dragon</option>
-        <option value="Squirrel">Squirrel</option>
-        <option value="Lion">Lion</option>
-        <option value="Boar">Boar</option>
-        <option value="Snake">Snake</option>
-        <option value="Rat">Rat</option>
-        <option value="Turtle">Turtle</option>
-        <option value="Hippogriff">Hippogriff</option>
-        <option value="Hound">Hound</option>
-        <option value="Lynx">Lynx</option>
-        <option value="Raven">Raven</option>
-        <option value="Bear">Bear</option>
-        <option value="Horse">Horse</option>
-        <option value="Ox">Ox</option>
-        <option value="Eagle">Eagle</option>
-        <option value="Owl">Owl</option>
-        <option value="Stoat">Stoat</option>
-      </select>
+    <div id="post-tab" class="tab-content" style="display: none;">
+      <div class="overlay">
+        <h2>Submit Your Build</h2>
 
-      <label for="selectedPath">Military Path:</label>
-      <select id="selectedPath"></select>
-      
-      <label><strong>Lore Selection:</strong></label>
-      <br>
-      <input type="radio" name="loreMode" id="loreJsonMode" checked> Use Predefined Lore List
-      <br>
-      <input type="radio" name="loreMode" id="loreTreeMode"> Use Lore Tree Template
-      <br><br>
-      <div id="lorePicker" class="lore-grid"></div>
-      <iframe id="loreTreeFrame" src="lore-tree.html" style="display:none; width: 100%; height: 400px; border: none; border-radius: 8px; margin-top: 10px;"></iframe>
-      <h3>Steps Per Year (800–804)</h3>
-      <div id="yearly-builds"></div>
-      <br><br>
-      <button id="submitBuild">Submit Build</button>
-      <p id="statusMsg"></p>
+        <div class="situational-tags-container">
+          <button id="toggleSituationalTags" class="collapsible">+ Applicable Maps</button>
+          <div id="situationalTagsContent" class="content" style="display: none;">
+            <label for="mapTag1">Select Map:</label>
+            <select id="mapTag1"></select>
+            <div id="mapTag1Preview" class="map-preview"></div>
+
+            <label for="mapTag2">Select Another Map:</label>
+            <select id="mapTag2"></select>
+            <div id="mapTag2Preview" class="map-preview"></div>
+          </div>
+        </div>
+
+        <label for="newName" class="input-label">Build Name:</label>
+        <input id="newName" type="text" placeholder="Build Name" />
+        <br><br>
+
+        <label for="newClan"><strong>Faction:</strong></label>
+        <select id="newClan">
+          <option value="" disabled selected>Select Faction</option>
+          <option value="Human">Human</option>
+          <option value="Orc">Orc</option>
+        </select>
+
+        <br><br>
+        <label><strong>Upgrades:</strong></label><br>
+        <textarea id="upgrades" rows="3" placeholder="One upgrade per line"></textarea>
+
+        <h3>Phases</h3>
+        <div id="yearly-builds"></div>
+
+        <br><br>
+        <button id="submitBuild">Submit Build</button>
+        <p id="statusMsg"></p>
+      </div>
     </div>
   </div>
 </div>
 
-<script type="module">
+<script type="module" nonce="firebase-123">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import {
     getAuth,
@@ -272,13 +211,16 @@
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDBHT5V9wrjqPvvuNsFr5q1sY0lgVmjVYk",
-    authDomain: "northgardbuilds.firebaseapp.com",
-    projectId: "northgardbuilds",
-    storageBucket: "northgardbuilds.appspot.com",
-    messagingSenderId: "1005760351082",
-    appId: "1:1005760351082:web:58ff96fc1ccc88935db313"
+    apiKey: "AIzaSyA4eog5dcEZg-S8za8QEakjx-9YM6JO6hU",
+    authDomain: "scouringanalyzer.firebaseapp.com",
+    databaseURL: "https://scouringanalyzer-default-rtdb.firebaseio.com",
+    projectId: "scouringanalyzer",
+    storageBucket: "scouringanalyzer.firebasestorage.app",
+    messagingSenderId: "1058489343807",
+    appId: "1:1058489343807:web:c45053c36c65aeee753d8a",
+    measurementId: "G-1DT19P4LEV"
   };
+
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -305,11 +247,14 @@
 
   console.log("✅ Firebase initialized and exposed globally.");
 </script>
+
 <script src="renderer.js"></script>
+
 <input type="text" id="focusTrap" style="position:absolute; opacity:0; pointer-events:none;">
 <div id="updateProgressContainer" style="display:none; position: fixed; bottom: 10px; left: 10px; right: 10px; background: #222; color: white; padding: 10px; border-radius: 8px;">
   🔄 Downloading update... <progress id="updateProgressBar" value="0" max="100"></progress>
   <span id="updateProgressText">0%</span>
 </div>
+
 </body>
 </html>

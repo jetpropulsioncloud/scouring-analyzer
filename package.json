@@ -1,17 +1,24 @@
 {
-  "name": "northgardanalyzer",
-  "version": "1.4.2",
-  "productName": "northgardanalyzer",
+  "name": "scouringanalyzer",
+  "version": "1.0.0",
+  "productName": "The Grand Lodge",
+  "description": "The Grand Lodge — RTS build companion app",
   "main": "main.js",
   "author": "Cloudpdf",
   "license": "ISC",
-  "description": "We'll figure it out later lol",
-  "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-builder",
-    "build": "electron-builder",
-    "publish": "electron-builder --publish always"
+  "homepage": "https://github.com/jetpropulsioncloud/scouring-analyzer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jetpropulsioncloud/scouring-analyzer.git"
   },
+
+  "scripts": {
+    "start": "electron-forge start",             
+    "dist": "electron-builder -w",             
+    "build": "electron-builder -w",               
+    "publish": "electron-builder -w -p always"    
+  },
+
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
     "electron": "^37.2.0",
@@ -23,32 +30,42 @@
     "firebase": "^12.0.0",
     "yaml": "^2.8.0"
   },
+
   "build": {
-    "appId": "com.northgardanalyzer.app",
-    "productName": "northgardanalyzer",
+    "appId": "com.scouringanalyzer.app",
+    "productName": "The Grand Lodge",
+    "directories": { "output": "dist" },
+
     "files": [
-      "**/*",
-      "!**/*.txt"
+      "index.html",
+      "viewBuild.html",
+      "renderer.js",
+      "preload.js",
+      "main.js",
+      "style.css",
+      "assets/**/*",
+      "!**/*.txt",
+      "package.json"
     ],
-    "directories": {
-      "output": "dist"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "jetpropulsioncloud",
-      "repo": "northgard-analyzer"
-    },
+
+    "asar": true,
+
+    "publish": [
+      { "provider": "github", "owner": "jetpropulsioncloud", "repo": "scouring-analyzer" }
+    ],
+
     "win": {
       "target": "nsis",
-      "icon": "assets/longhouse-icon.ico"
+      "icon": "assets/scouring-icon.ico"
     },
+
     "nsis": {
-      "oneClick": false,
-      "perMachine": true,
+      "oneClick": true,                           
+      "perMachine": false,                        
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "The Longhouse"
+      "shortcutName": "The Grand Lodge"
     }
   }
 }

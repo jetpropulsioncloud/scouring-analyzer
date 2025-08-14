@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'nonce-vb1';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    font-src 'self';
+    connect-src 'self' https://firestore.googleapis.com https://*.firebaseio.com https://www.googleapis.com;
+    frame-src 'self';
+    object-src 'none';
+    base-uri 'self';
+  ">
   <meta charset="UTF-8">
   <title>View Build</title>
   <link rel="stylesheet" href="style.css">
@@ -9,11 +20,10 @@
       font-family: sans-serif;
       padding: 0;
       margin: 0;
-      background-color: transparent;
+      background-color: rgba(30, 30, 30, 0.4);
       background-image: none;
       color: white;
     }
-
     .title-bar {
       -webkit-app-region: drag;
       user-select: none;
@@ -25,13 +35,9 @@
       align-items: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    .title-bar * {
-      -webkit-app-region: no-drag;
-    }
-
+    .title-bar * { -webkit-app-region: no-drag; }
     .title-bar button {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255,255,255,0.1);
       border: none;
       color: white;
       padding: 4px 10px;
@@ -39,10 +45,7 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
-    .title-bar button:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
+    .title-bar button:hover { background: rgba(255,255,255,0.2); }
 
     #buildViewerContainer {
       max-height: 90vh;
@@ -50,22 +53,25 @@
       padding: 16px;
       box-sizing: border-box;
     }
+    .build-step { margin-left: 10px; margin-bottom: 5px; }
+    .phase-header { margin-top: 15px; font-size: 15px; color: #ddd; }
+    h2 { font-size: 18px; margin-bottom: 10px; color: #ffda7b; }
 
-    .build-step {
-      margin-left: 10px;
-      margin-bottom: 5px;
+    .btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
     }
-
-    .phase-header {
-      margin-top: 15px;
-      font-size: 15px;
-      color: #ddd;
-    }
-
-    h2 {
-      font-size: 18px;
-      margin-bottom: 10px;
-      color: #ffda7b;
+    .btn:hover { background: rgba(255,255,255,0.2); }
+    .images-panel img {
+      max-width: 280px;
+      display: block;
+      margin: 8px 0;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -74,25 +80,23 @@
     <div class="build-title-bar">
       <div class="build-title-left">
         <div class="build-title-text">Build Viewer</div>
-        <div class="build-subtitle">(Requires Northgard in Windowed or Borderless Mode)</div>
+        <div class="build-subtitle">(Requires The Scouring in Windowed or Borderless Mode)</div>
       </div>
-      <button onclick="closeApp()">X</button>
+      <button id="closeBtn">X</button>
     </div>
     <div id="buildViewerContainer" class="no-drag-scrollable">
       <div id="buildContent"></div>
     </div>
 
-<script>
-  const { ipcRenderer } = require('electron');
+<script nonce="vb1">
+  const ipcRenderer =
+    (typeof require === 'function' && (() => { try { return require('electron').ipcRenderer; } catch (e) { return null; } })()) ||
+    window.ipc || null;
 
-  // Close the popup
-  function closeApp() {
-    window.close();
-  }
+  function closeApp() { window.close(); }
 
-  // Pick emoji for a step
   function getEmojiForStep(step) {
-    const s = step.toLowerCase();
+    const s = String(step || '').toLowerCase();
     if (s.includes("wood") || s.includes("lodge")) return "🌲";
     if (s.includes("house")) return "🏠";
     if (s.includes("scout")) return "🧭";
@@ -100,7 +104,7 @@
     if (s.includes("training") || s.includes("military")) return "⚔️";
     if (s.includes("feast")) return "🍽️";
     if (s.includes("clear") || s.includes("attack")) return "🛡️";
-    if (s.includes("trade post")) return "🏦";
+    if (s.includes("trade post") || s.includes("trading post")) return "🏦";
     if (s.includes("warchief")) return "🪓";
     if (s.includes("brewery")) return "🍺";
     if (s.includes("mine") || s.includes("mining")) return "⛏️";
@@ -114,85 +118,100 @@
     return "•";
   }
 
-  // Show steps in the build
   function renderBuildSteps(steps) {
-    return (steps || []).map(step => {
-      if (step.startsWith("#")) {
-        return `<h4 class="phase-header">📅 ${step.slice(1).trim()}</h4>`;
-      }
-      return `<div class="build-step">${getEmojiForStep(step)} ${step}</div>`;
+    const arr = Array.isArray(steps) ? steps : [];
+    return arr.map(text => {
+      text = String(text || "");
+      if (text.startsWith("#")) return `<h4 class="phase-header">📅 ${text.slice(1).trim()}</h4>`;
+      return `<div class="build-step">${getEmojiForStep(text)} ${text}</div>`;
     }).join("");
   }
 
-  // Listen for the build data from main
-  ipcRenderer.on('load-build', (event, build) => {
-    const tags = (build.situationalTags || []).join(', ') || 'None';
+  function resolveMapImages(build) {
+    if (Array.isArray(build.mapImages) && build.mapImages.length) return build.mapImages.filter(Boolean);
+    if (Array.isArray(build.applicableMaps)) {
+      const imgs = build.applicableMaps.map(m => {
+        if (typeof m === 'string') return (window.MAPS_LOOKUP?.[m] || '');
+        if (m && typeof m === 'object') return (m.image || '');
+        return '';
+      }).filter(Boolean);
+      if (imgs.length) return imgs;
+    }
+    return [];
+  }
+
+  function renderBuild(build) {
+    const name = build.name || build.title || "Untitled Build";
+    const clan = build.clan || build.faction || "Unknown";
+    const steps = build.steps || build.macroSteps || [];
+    const tags = Array.isArray(build.situationalTags) ? build.situationalTags
+               : Array.isArray(build.tags) ? build.tags : [];
+    const tagsText = tags.length ? tags.join(", ") : "None";
+
+    const maps = Array.isArray(build.applicableMaps) ? build.applicableMaps : [];
+    const mapNames = maps.map(m => (typeof m === 'string' ? m : (m?.name || ''))).filter(Boolean);
+    const mapsLine = mapNames.length ? `<p><strong>🗺️ Maps:</strong> ${mapNames.join(', ')}</p>` : '';
+
+    const images = resolveMapImages(build);
+    const imagesButton = images.length ? `<button id="toggleImagesBtn" class="btn">🖼️ Show Map Images</button>` : '';
+    const imagesPanel = images.length
+      ? `<div id="imagesPanel" class="images-panel" style="display:none;margin:8px 0;">
+           ${images.map(src => `<img src="${src}" alt="Map image">`).join('')}
+         </div>`
+      : '';
+
     const html = `
-      <h2>${build.name} (${build.clan})</h2>
-      ${build.militaryPath ? `<p><strong>⚔️ Military Path:</strong> ${build.militaryPath}</p>` : ''}
-      <button id="toggleLoreBtn">📜 Show Lore</button>
-      <div id="loreViewer" style="display:none; margin-top: 16px;"></div>
-      <p><strong>🌍 Tags:</strong> ${tags}</p>
+      <h2>${name} (${clan})</h2>
+      <p><strong>🌍 Tags:</strong> ${tagsText}</p>
+      ${mapsLine}
+      ${imagesButton}
+      ${imagesPanel}
       <hr>
-      <div>${renderBuildSteps(build.steps)}</div>
+      <div>${renderBuildSteps(steps)}</div>
     `;
-    document.getElementById('buildContent').innerHTML = html;
+    const slot = document.getElementById("buildContent");
+    if (slot) slot.innerHTML = html;
 
-    const toggleLoreBtn = document.getElementById("toggleLoreBtn");
+    const imgBtn = document.getElementById("toggleImagesBtn");
+    const panel = document.getElementById("imagesPanel");
+    if (imgBtn && panel) {
+      imgBtn.addEventListener("click", () => {
+        const show = panel.style.display === "none";
+        panel.style.display = show ? "block" : "none";
+        imgBtn.textContent = show ? "🖼️ Hide Map Images" : "🖼️ Show Map Images";
+      });
+    }
+
+    const btn = document.getElementById("toggleLoreBtn");
     const loreViewer = document.getElementById("loreViewer");
+    if (btn && loreViewer) {
+      btn.addEventListener("click", () => {
+        const showing = loreViewer.style.display !== "none";
+        loreViewer.style.display = showing ? "none" : "block";
+        btn.textContent = showing ? "📜 Show Lore" : "📜 Hide Lore";
+        if (!showing && typeof window.showLore === 'function') window.showLore(build);
+      });
+    }
+  }
 
-    toggleLoreBtn.addEventListener("click", () => {
-      if (loreViewer.style.display === "none") {
-        showLore(build);
-        loreViewer.style.display = "block";
-        toggleLoreBtn.textContent = "📜 Hide Lore";
-      } else {
-        loreViewer.style.display = "none";
-        toggleLoreBtn.textContent = "📜 Show Lore";
-      }
-    });
+  document.addEventListener("DOMContentLoaded", () => {
+    const closeBtn = document.getElementById("closeBtn");
+    if (closeBtn) closeBtn.addEventListener("click", closeApp);
   });
 
-  // Show the lore tree in read-only mode
-  function showLore(build) {
-    const container = document.getElementById("loreViewer");
-    container.innerHTML = "";
-
-    const order = build.loreOrder || [];
-    if (order.length === 0) {
-      container.innerHTML = "<p><em>No lore order available.</em></p>";
-      return;
-    }
-
-    const looksNumeric = (v) => Number.isFinite(v) || /^\d+$/.test(String(v));
-    const isTree = (build.loreMode === 'tree') || order.every(looksNumeric);
-
-    if (isTree) {
-      const iframe = document.createElement("iframe");
-      iframe.src = "lore-tree.html";
-      iframe.style.cssText = "width:100%;height:400px;border:none;border-radius:8px;";
-      iframe.onload = () => {
-        try {
-          const idx = order.map(n => parseInt(n, 10));
-          iframe.contentWindow.setSelectedLoreIndexes(idx);
-        } catch (err) {
-          console.error("Failed to set lore:", err);
-        }
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-        const style = doc.createElement('style');
-        style.textContent = `
-          button, [role="button"], a, input, select, textarea, .clickable {
-            pointer-events: none !important;
-          }
-        `;
-        doc.head.appendChild(style);
-      };
-      container.appendChild(iframe);
-      iframe.style.pointerEvents = "none";
-    } else {
-      const items = order.map((l, i) => `<li>${i + 1}. ${l}</li>`).join('');
-      container.innerHTML = `<div><strong>📜 Lore Order:</strong><ul>${items}</ul></div>`;
-    }
+  if (ipcRenderer && typeof ipcRenderer.on === 'function') {
+    ipcRenderer.on('build-data', (_evt, build) => renderBuild(build || {}));
+    ipcRenderer.on('load-build', (_evt, build) => renderBuild(build || {}));
+    if (typeof ipcRenderer.send === 'function') ipcRenderer.send('request-build-data');
+  } else {
+    renderBuild({
+      name: "Sample Fast-Expand",
+      clan: "Raven",
+      steps: ["# 800", "Queue 2 Villagers", "Build Scout Camp", "Scout 3 tiles", "# 801", "Build Training Camp", "Train 2 Warriors"],
+      situationalTags: ["Greedy", "Safe opener"],
+      applicableMaps: ["Eldenvale", "Mountain Pass"],
+      mapImages: ["assets/maps/eldenvale.png","assets/maps/mountain_pass.png"]
+    });
   }
 </script>
 </body>

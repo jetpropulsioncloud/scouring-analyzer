@@ -1,0 +1,6 @@
+{
+  "maps": [
+    { "name": "Ashen Plains", "img": "assets/maps/ashen-plains.jpg" },
+    { "name": "Frost Valley", "img": "assets/maps/frost-valley.jpg" }
+  ]
+}

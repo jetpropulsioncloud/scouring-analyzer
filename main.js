@@ -19,8 +19,8 @@ function createWindow() {
     width: 400,
     height: 600,
     icon: process.platform === 'win32'
-      ? path.join(__dirname, 'assets', 'longhouse-icon.ico')
-      : path.join(__dirname, 'assets', 'longhouse-icon.png'),
+      ? path.join(__dirname, 'assets', 'scouring-icon.ico')
+      : path.join(__dirname, 'assets', 'scouring-icon.png'),
     transparent: false,
     frame: false,
     resizable: true,
@@ -53,7 +53,7 @@ function createWindow() {
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'jetpropulsioncloud',
-      repo: 'northgard-analyzer'
+      repo: 'scouring-analyzer'
     });
 
     autoUpdater.checkForUpdatesAndNotify();
@@ -110,7 +110,7 @@ ipcMain.on('open-build-window', (event, buildData) => {
     minWidth: 350,
     minHeight: 400,
     resizable: true,
-    title: 'Northgard Build',
+    title: 'Scouring Build',
     alwaysOnTop: true,
     frame: false,
     transparent: true,

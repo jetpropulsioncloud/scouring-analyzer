@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Eldenvale",
+    "players": 2,
+    "size": "Tiny",
+    "image": "assets/maps/eldenvale.png"
+  },
+  {
+    "name": "Mountain Pass",
+    "players": 2,
+    "size": "Tiny",
+    "image": "assets/maps/mountain_pass.png"
+  },
+  {
+    "name": "The First Encounter",
+    "players": 3,
+    "size": "Small",
+    "image": "assets/maps/the_first_encounter.png"
+  },
+  {
+    "name": "Island of Doom",
+    "players": 4,
+    "size": "Small",
+    "image": "assets/maps/island_of_doom.png"
+  },
+  {
+    "name": "Tacticon 2025",
+    "players": 4,
+    "size": "Small",
+    "image": "assets/maps/tacticon_2025.png"
+  },
+  {
+    "name": "Western Basin",
+    "players": 6,
+    "size": "Small",
+    "image": "assets/maps/western_basin.png"
+  },
+  {
+    "name": "Valley Ridge",
+    "players": 6,
+    "size": "Medium",
+    "image": "assets/maps/valley_ridge.png"
+  },
+  {
+    "name": "Midlands",
+    "players": 8,
+    "size": "Large",
+    "image": "assets/maps/midlands.png"
+  },
+  {
+    "name": "Battle of Seton",
+    "players": 8,
+    "size": "Large",
+    "image": "assets/maps/battle_of_seton.png"
+  },
+  {
+    "name": "Besieged Coop",
+    "players": 2,
+    "size": "Custom Scenario",
+    "image": "assets/maps/besieged_coop.png"
+  },
+  {
+    "name": "Orcs vs Humans",
+    "players": 6,
+    "size": "Custom Scenario",
+    "image": "assets/maps/orcs_vs_humans.png"
+  },
+  {
+    "name": "Besieged",
+    "players": 1,
+    "size": "Custom Scenario",
+    "image": "assets/maps/besieged.png"
+  }
+]
