@@ -1,11 +1,12 @@
 {
   "name": "scouringanalyzer",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "productName": "The Grand Lodge",
   "description": "The Grand Lodge — RTS build companion app",
   "main": "main.js",
-  "author": "Cloudpdf",
+  "author": "Blockclub Team",
   "license": "ISC",
+  "copyright": "© 2025 Blockclub Team",
   "homepage": "https://github.com/jetpropulsioncloud/scouring-analyzer",
   "repository": {
     "type": "git",

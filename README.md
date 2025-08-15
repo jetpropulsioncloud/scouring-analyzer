@@ -38,3 +38,7 @@ git clone https://github.com/jetpropulsioncloud/the-grand-lodge.git
 cd the-grand-lodge
 npm install
 npm start
+---
+
+© 2025 Blockclub Team  
+Contact: playblockclub.com@gmail.com
