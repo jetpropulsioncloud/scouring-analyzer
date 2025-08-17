@@ -152,15 +152,39 @@ document.addEventListener("DOMContentLoaded", () => {
     slot.appendChild(cap);
   }
 
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       loginSection.style.display = 'none';
       document.getElementById('register-screen').style.display = 'none';
       homeScreen.style.display = 'block';
       showTab('build-tab');
-      authStatus.textContent = `✅ Logged in as ${user.email}`;
+
+      const userRef = window.doc(db, "users", user.uid);
+      let snap = await window.getDoc(userRef);
+
+      if (!snap.exists()) {
+        const q = window.query(window.collection(db, "users"), window.where("uid", "==", user.uid));
+        const old = await window.getDocs(q);
+
+        const email = user.email || "";
+        const fallback = email ? email.split("@")[0] : "player";
+        const data = old.empty ? { username: fallback, email } : { ...old.docs[0].data() };
+
+        await window.setDoc(userRef, {
+          uid: user.uid,
+          email: data.email || email,
+          username: data.username || fallback,
+          createdAt: data.createdAt || Date.now()
+        }, { merge: true });
+        snap = await window.getDoc(userRef);
+        console.log("✅ user doc ensured/migrated");
+      }
+
+      const data = snap.data();
+      authStatus.textContent = `✅ Logged in as ${data.username || data.email || user.email}`;
       loadUserBuilds(user.uid);
       setTimeout(() => { if (refreshBuildsBtn) refreshBuildsBtn.click(); }, 200);
+
     } else {
       loginSection.style.display = 'block';
       homeScreen.style.display = 'none';
@@ -169,23 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
       authStatus.textContent = '🔒 Please log in';
     }
   });
-
-  if (refreshBuildsBtn) {
-    refreshBuildsBtn.addEventListener('click', async () => {
-      await loadBuilds(true, true);
-      const user = auth.currentUser;
-      if (user) await loadUserBuilds(user.uid);
-      const selectedClan = clanFilter.value;
-      if (selectedClan === "All") {
-        updateBuildSelector(buildData);
-      } else {
-        const filtered = Object.fromEntries(
-          Object.entries(buildData).filter(([_, data]) => data.clan === selectedClan)
-        );
-        updateBuildSelector(filtered);
-      }
-    });
-  }
 
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {

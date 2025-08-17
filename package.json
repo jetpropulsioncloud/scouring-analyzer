@@ -1,6 +1,6 @@
 {
   "name": "scouringanalyzer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "productName": "The Grand Lodge",
   "description": "The Grand Lodge — RTS build companion app",
   "main": "main.js",
